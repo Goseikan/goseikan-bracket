@@ -1,0 +1,185 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Material Design 3 inspired base styles */
+@layer base {
+  :root {
+    /* Material Design 3 typography scale */
+    --md-typography-display-large: 57px;
+    --md-typography-display-medium: 45px;
+    --md-typography-display-small: 36px;
+    --md-typography-headline-large: 32px;
+    --md-typography-headline-medium: 28px;
+    --md-typography-headline-small: 24px;
+    --md-typography-title-large: 22px;
+    --md-typography-title-medium: 16px;
+    --md-typography-title-small: 14px;
+    --md-typography-body-large: 16px;
+    --md-typography-body-medium: 14px;
+    --md-typography-body-small: 12px;
+    --md-typography-label-large: 14px;
+    --md-typography-label-medium: 12px;
+    --md-typography-label-small: 11px;
+    
+    /* Material Design 3 elevation shadows */
+    --md-elevation-1: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+    --md-elevation-2: 0px 1px 2px rgba(0, 0, 0, 0.3), 0px 2px 6px 2px rgba(0, 0, 0, 0.15);
+    --md-elevation-3: 0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 1px 3px rgba(0, 0, 0, 0.3);
+    --md-elevation-4: 0px 6px 10px 4px rgba(0, 0, 0, 0.15), 0px 2px 3px rgba(0, 0, 0, 0.3);
+    --md-elevation-5: 0px 8px 12px 6px rgba(0, 0, 0, 0.15), 0px 4px 4px rgba(0, 0, 0, 0.3);
+  }
+  
+  * {
+    @apply border-gray-200;
+  }
+  
+  body {
+    @apply bg-white text-gray-900 font-sans antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Material Design 3 component styles */
+@layer components {
+  /* Material Design 3 Button styles */
+  .btn {
+    @apply inline-flex items-center justify-center px-6 py-3 text-sm font-medium rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+  
+  .btn-filled {
+    @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 shadow-md hover:shadow-lg;
+  }
+  
+  .btn-outlined {
+    @apply btn border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500;
+  }
+  
+  .btn-text {
+    @apply btn text-primary-600 hover:bg-primary-50 focus:ring-primary-500 px-4;
+  }
+  
+  .btn-fab {
+    @apply w-14 h-14 rounded-full bg-accent-400 text-gray-900 hover:bg-accent-500 focus:ring-accent-500 shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center;
+  }
+  
+  /* Material Design 3 Card styles */
+  .card {
+    @apply bg-white rounded-xl border border-gray-200 overflow-hidden;
+    box-shadow: var(--md-elevation-1);
+  }
+  
+  .card-elevated {
+    @apply card;
+    box-shadow: var(--md-elevation-3);
+  }
+  
+  /* Material Design 3 Input styles */
+  .input-field {
+    @apply relative;
+  }
+  
+  .input {
+    @apply w-full px-4 py-3 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200;
+  }
+  
+  .input-filled {
+    @apply input bg-gray-50 border-0 focus:bg-white;
+  }
+  
+  /* Material Design 3 Typography */
+  .text-display-large {
+    font-size: var(--md-typography-display-large);
+    @apply font-normal leading-tight;
+  }
+  
+  .text-display-medium {
+    font-size: var(--md-typography-display-medium);
+    @apply font-normal leading-tight;
+  }
+  
+  .text-display-small {
+    font-size: var(--md-typography-display-small);
+    @apply font-normal leading-tight;
+  }
+  
+  .text-headline-large {
+    font-size: var(--md-typography-headline-large);
+    @apply font-normal leading-snug;
+  }
+  
+  .text-headline-medium {
+    font-size: var(--md-typography-headline-medium);
+    @apply font-normal leading-snug;
+  }
+  
+  .text-headline-small {
+    font-size: var(--md-typography-headline-small);
+    @apply font-normal leading-snug;
+  }
+  
+  .text-title-large {
+    font-size: var(--md-typography-title-large);
+    @apply font-medium leading-normal;
+  }
+  
+  .text-title-medium {
+    font-size: var(--md-typography-title-medium);
+    @apply font-medium leading-normal;
+  }
+  
+  .text-title-small {
+    font-size: var(--md-typography-title-small);
+    @apply font-medium leading-normal;
+  }
+  
+  .text-body-large {
+    font-size: var(--md-typography-body-large);
+    @apply font-normal leading-relaxed;
+  }
+  
+  .text-body-medium {
+    font-size: var(--md-typography-body-medium);
+    @apply font-normal leading-relaxed;
+  }
+  
+  .text-body-small {
+    font-size: var(--md-typography-body-small);
+    @apply font-normal leading-relaxed;
+  }
+  
+  .text-label-large {
+    font-size: var(--md-typography-label-large);
+    @apply font-medium leading-normal;
+  }
+  
+  .text-label-medium {
+    font-size: var(--md-typography-label-medium);
+    @apply font-medium leading-normal;
+  }
+  
+  .text-label-small {
+    font-size: var(--md-typography-label-small);
+    @apply font-medium leading-normal;
+  }
+  
+  /* Material Design 3 Navigation */
+  .nav-bar {
+    @apply bg-white border-b border-gray-200 px-4 py-3;
+    box-shadow: var(--md-elevation-2);
+  }
+  
+  /* Material Design 3 Surface styles */
+  .surface {
+    @apply bg-white;
+  }
+  
+  .surface-variant {
+    @apply bg-gray-50;
+  }
+}
