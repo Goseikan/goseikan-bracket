@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react'
 import type { Tournament, Match, Court, Dojo, Team, User } from '../types'
 import { migrateTournamentData, isDataMigrationNeeded } from '../utils/dataMigration'
+import { generateDojoLogo, generateTeamLogo } from '../utils/logoGenerator'
 
 /**
  * Tournament Context for managing tournament state and data
@@ -33,6 +34,8 @@ interface TournamentContextType extends TournamentState {
   loadTournamentData: () => Promise<void>
   updateTournament: (tournament: Tournament) => void
   updateMatch: (match: Match) => void
+  addDojo: (name: string, location: string) => Dojo
+  addTeam: (name: string, dojoId: string) => Team
   getUsersByDojoId: (dojoId: string) => User[]
   getTeamsByDojoId: (dojoId: string) => Team[]
   getUserById: (userId: string) => User | null
@@ -209,6 +212,57 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }
 
   /**
+   * Add a new dojo with automatically generated logo
+   */
+  const addDojo = (name: string, location: string): Dojo => {
+    const newDojo: Dojo = {
+      id: `dojo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name,
+      location,
+      logo: generateDojoLogo(name), // Automatically generate logo
+      teams: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    
+    // Update localStorage
+    const updatedDojos = [...state.dojos, newDojo]
+    localStorage.setItem('dojos', JSON.stringify(updatedDojos))
+    
+    // Dispatch to state
+    dispatch({ type: 'ADD_DOJO', payload: newDojo })
+    
+    return newDojo
+  }
+
+  /**
+   * Add a new team with automatically generated logo
+   */
+  const addTeam = (name: string, dojoId: string): Team => {
+    const dojo = getDojoById(dojoId)
+    const dojoName = dojo?.name || 'Unknown Dojo'
+    
+    const newTeam: Team = {
+      id: `team_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name,
+      dojoId,
+      logo: generateTeamLogo(name, dojoName), // Automatically generate logo
+      players: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    
+    // Update localStorage
+    const updatedTeams = [...state.teams, newTeam]
+    localStorage.setItem('teams', JSON.stringify(updatedTeams))
+    
+    // Dispatch to state
+    dispatch({ type: 'ADD_TEAM', payload: newTeam })
+    
+    return newTeam
+  }
+
+  /**
    * Clear error function
    */
   const clearError = (): void => {
@@ -220,6 +274,8 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     loadTournamentData,
     updateTournament,
     updateMatch,
+    addDojo,
+    addTeam,
     getUsersByDojoId,
     getTeamsByDojoId,
     getUserById,

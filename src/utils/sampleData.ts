@@ -346,13 +346,29 @@ const generateUsers = (): User[] => {
   return users
 }
 
-// Sample logo placeholders (using placeholder services for demo)
+// Sample logo placeholders with unique colors and abbreviations for all dojos
 const DOJO_LOGOS: Record<string, string> = {
   "Bloomington Normal Kendo Club": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%234F46E5'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='14' font-weight='bold' text-anchor='middle' fill='white'%3EBNKC%3C/text%3E%3C/svg%3E",
   "Cleveland Kendo Association": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23DC2626'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='16' font-weight='bold' text-anchor='middle' fill='white'%3ECKA%3C/text%3E%3C/svg%3E",
+  "Columbus Kendo Club": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23059669'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='16' font-weight='bold' text-anchor='middle' fill='white'%3ECKC%3C/text%3E%3C/svg%3E",
+  "Costa Mesa Kendo Dojo": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23F59E0B'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='14' font-weight='bold' text-anchor='middle' fill='white'%3ECMKD%3C/text%3E%3C/svg%3E",
   "Detroit Kendo Dojo": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23059669'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='16' font-weight='bold' text-anchor='middle' fill='white'%3EDKD%3C/text%3E%3C/svg%3E",
   "Goseikan": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23B91C1C'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='16' font-weight='bold' text-anchor='middle' fill='white'%3EGSK%3C/text%3E%3C/svg%3E",
-  "Great Lakes Kendo Dojo": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%231D4ED8'/%3E%3Ctext x='50' y='50' font-family='Arial' font-size='12' font-weight='bold' text-anchor='middle' fill='white'%3EGLKD%3C/text%3E%3C/svg%3E"
+  "Great Lakes Kendo Dojo": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%231D4ED8'/%3E%3Ctext x='50' y='50' font-family='Arial' font-size='12' font-weight='bold' text-anchor='middle' fill='white'%3EGLKD%3C/text%3E%3C/svg%3E",
+  "Hampton Roads Kendo Dojo": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23C026D3'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='14' font-weight='bold' text-anchor='middle' fill='white'%3EHRKD%3C/text%3E%3C/svg%3E",
+  "JCCC Kendo Club": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2314B8A6'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='16' font-weight='bold' text-anchor='middle' fill='white'%3EJCCC%3C/text%3E%3C/svg%3E",
+  "Koyokai": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23EF4444'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='16' font-weight='bold' text-anchor='middle' fill='white'%3EKYOK%3C/text%3E%3C/svg%3E",
+  "Macomb Kendo Dojo": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%236B7280'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='16' font-weight='bold' text-anchor='middle' fill='white'%3EMKD%3C/text%3E%3C/svg%3E",
+  "Miami Valley Kendo Club": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23F97316'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='14' font-weight='bold' text-anchor='middle' fill='white'%3EMVKC%3C/text%3E%3C/svg%3E",
+  "Milwaukee Kendo Club": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2384CC16'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='16' font-weight='bold' text-anchor='middle' fill='white'%3EMKC%3C/text%3E%3C/svg%3E",
+  "Minnehaha Kendo Dojo": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%238B5CF6'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='14' font-weight='bold' text-anchor='middle' fill='white'%3EMHKD%3C/text%3E%3C/svg%3E",
+  "Michigan State University Kendo Club": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2306B6D4'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='16' font-weight='bold' text-anchor='middle' fill='white'%3EMSU%3C/text%3E%3C/svg%3E",
+  "Ohio State University Kendo Club": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23DC2626'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='16' font-weight='bold' text-anchor='middle' fill='white'%3EOSU%3C/text%3E%3C/svg%3E",
+  "Pittsburgh Kenyukai": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23FBBF24'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='16' font-weight='bold' text-anchor='middle' fill='white'%3EPITT%3C/text%3E%3C/svg%3E",
+  "St. Louis Kendo": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%233B82F6'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='16' font-weight='bold' text-anchor='middle' fill='white'%3ESTL%3C/text%3E%3C/svg%3E",
+  "Seishinkan": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2310B981'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='16' font-weight='bold' text-anchor='middle' fill='white'%3ESEI%3C/text%3E%3C/svg%3E",
+  "Toronto Kendo Club": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23BE185D'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='16' font-weight='bold' text-anchor='middle' fill='white'%3ETKC%3C/text%3E%3C/svg%3E",
+  "University of Michigan Kendo Club": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23FBBF24'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='18' font-weight='bold' text-anchor='middle' fill='blue'%3EUM%3C/text%3E%3C/svg%3E"
 }
 
 /**
@@ -370,8 +386,25 @@ const generateDojos = (): Dojo[] => {
   }))
 }
 
-// Sample team logo colors (each team gets a different colored version)
-const TEAM_LOGO_COLORS = ['%23EF4444', '%23F59E0B', '%2310B981', '%233B82F6', '%236366F1', '%238B5CF6']
+// Sample team logo colors (each team gets a different colored version) - Expanded palette
+const TEAM_LOGO_COLORS = [
+  '%23EF4444', // Red
+  '%23F59E0B', // Amber
+  '%2310B981', // Emerald
+  '%233B82F6', // Blue
+  '%236366F1', // Indigo
+  '%238B5CF6', // Violet
+  '%23EC4899', // Pink
+  '%2306B6D4', // Cyan
+  '%2384CC16', // Lime
+  '%23F97316', // Orange
+  '%23DC2626', // Red-600
+  '%231D4ED8', // Blue-700
+  '%23059669', // Green-600
+  '%23C026D3', // Fuchsia-600
+  '%2314B8A6', // Teal-500
+  '%236B7280'  // Gray-500
+]
 
 /**
  * Generate sample teams

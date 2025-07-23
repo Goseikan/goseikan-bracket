@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTournament } from '../contexts/TournamentContext'
 import LogoUpload from './LogoUpload'
-import { Building, Users, Save, AlertCircle } from 'lucide-react'
+import { Building, Users, Save, AlertCircle, Plus } from 'lucide-react'
 
 /**
  * DojoManagement component for managing dojo and team logos
@@ -11,7 +11,7 @@ import { Building, Users, Save, AlertCircle } from 'lucide-react'
 
 const DojoManagement: React.FC = () => {
   const { user } = useAuth()
-  const { dojos, teams, getDojoById, getTeamsByDojoId } = useTournament()
+  const { dojos, teams, getDojoById, getTeamsByDojoId, addDojo, addTeam } = useTournament()
   
   const [userDojo, setUserDojo] = useState<any>(null)
   const [userTeams, setUserTeams] = useState<any[]>([])
@@ -20,6 +20,13 @@ const DojoManagement: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
+  
+  // New dojo/team creation state
+  const [showCreateDojo, setShowCreateDojo] = useState(false)
+  const [showCreateTeam, setShowCreateTeam] = useState(false)
+  const [newDojoName, setNewDojoName] = useState('')
+  const [newDojoLocation, setNewDojoLocation] = useState('')
+  const [newTeamName, setNewTeamName] = useState('')
 
   // Load user's dojo and teams
   useEffect(() => {
@@ -89,6 +96,53 @@ const DojoManagement: React.FC = () => {
       }, 2000)
     } catch (err) {
       setError('Failed to save logos. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Handle creating a new dojo
+  const handleCreateDojo = async () => {
+    if (!newDojoName.trim() || !newDojoLocation.trim()) {
+      setError('Please fill in all dojo fields')
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError('')
+      
+      const newDojo = addDojo(newDojoName.trim(), newDojoLocation.trim())
+      
+      setSuccess(`Dojo "${newDojo.name}" created successfully with auto-generated logo!`)
+      setNewDojoName('')
+      setNewDojoLocation('')
+      setShowCreateDojo(false)
+    } catch (err) {
+      setError('Failed to create dojo. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Handle creating a new team
+  const handleCreateTeam = async () => {
+    if (!newTeamName.trim()) {
+      setError('Please enter a team name')
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError('')
+      
+      const newTeam = addTeam(newTeamName.trim(), userDojo.id)
+      
+      setSuccess(`Team "${newTeam.name}" created successfully with auto-generated logo!`)
+      setNewTeamName('')
+      setShowCreateTeam(false)
+    } catch (err) {
+      setError('Failed to create team. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -199,6 +253,145 @@ const DojoManagement: React.FC = () => {
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Creation Forms */}
+      <div className="grid lg:grid-cols-2 gap-8">
+        {/* Create New Dojo */}
+        <div className="card p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center">
+              <Plus className="w-6 h-6 text-primary-600 mr-3" />
+              <div>
+                <h3 className="text-title-large font-semibold text-gray-900">
+                  Create New Dojo
+                </h3>
+                <p className="text-body-medium text-gray-600">
+                  Add a new dojo with auto-generated logo
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {!showCreateDojo ? (
+            <button
+              onClick={() => setShowCreateDojo(true)}
+              className="btn-outlined w-full"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create New Dojo
+            </button>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-label-medium text-gray-700 mb-2">
+                  Dojo Name
+                </label>
+                <input
+                  type="text"
+                  value={newDojoName}
+                  onChange={(e) => setNewDojoName(e.target.value)}
+                  placeholder="Enter dojo name"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-label-medium text-gray-700 mb-2">
+                  Location
+                </label>
+                <input
+                  type="text"
+                  value={newDojoLocation}
+                  onChange={(e) => setNewDojoLocation(e.target.value)}
+                  placeholder="Enter location (e.g., City, State)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleCreateDojo}
+                  disabled={loading}
+                  className="btn-filled flex-1"
+                >
+                  Create Dojo
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCreateDojo(false)
+                    setNewDojoName('')
+                    setNewDojoLocation('')
+                  }}
+                  className="btn-outlined flex-1"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Create New Team */}
+        <div className="card p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center">
+              <Plus className="w-6 h-6 text-primary-600 mr-3" />
+              <div>
+                <h3 className="text-title-large font-semibold text-gray-900">
+                  Create New Team
+                </h3>
+                <p className="text-body-medium text-gray-600">
+                  Add a team to {userDojo.name} with auto-generated logo
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {!showCreateTeam ? (
+            <button
+              onClick={() => setShowCreateTeam(true)}
+              className="btn-outlined w-full"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create New Team
+            </button>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-label-medium text-gray-700 mb-2">
+                  Team Name
+                </label>
+                <input
+                  type="text"
+                  value={newTeamName}
+                  onChange={(e) => setNewTeamName(e.target.value)}
+                  placeholder="Enter team name"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleCreateTeam}
+                  disabled={loading}
+                  className="btn-filled flex-1"
+                >
+                  Create Team
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCreateTeam(false)
+                    setNewTeamName('')
+                  }}
+                  className="btn-outlined flex-1"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

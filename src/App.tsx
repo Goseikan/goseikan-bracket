@@ -12,6 +12,7 @@ import AdminPage from './pages/AdminPage'
 import CourtPage from './pages/CourtPage'
 import PublicCourtPage from './pages/PublicCourtPage'
 import ProtectedRoute from './components/ProtectedRoute'
+import { ScrollToTop } from './hooks/useScrollToTop'
 
 /**
  * Main App component that sets up routing and global context providers
@@ -22,12 +23,13 @@ function App() {
     <AuthProvider>
       <TournamentProvider>
         <Router>
-          <div className="min-h-screen bg-white">
-            {/* Navigation component with Material Design 3 styling */}
-            <Navigation />
-            
-            {/* Main content area with proper spacing */}
-            <main className="pb-safe">
+          <ScrollToTop>
+            <div className="min-h-screen bg-white">
+              {/* Navigation component with Material Design 3 styling */}
+              <Navigation />
+              
+              {/* Main content area with proper spacing */}
+              <main className="pb-safe">
               <Routes>
                 {/* Public routes */}
                 <Route path="/" element={<HomePage />} />
@@ -58,6 +60,7 @@ function App() {
               </Routes>
             </main>
           </div>
+          </ScrollToTop>
         </Router>
       </TournamentProvider>
     </AuthProvider>
