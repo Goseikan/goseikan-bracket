@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { Menu, X, Trophy, User, Settings, LogOut, Sword } from 'lucide-react'
+import { Menu, X, Trophy, User, Settings, LogOut, Sword, Users } from 'lucide-react'
 
 /**
  * Navigation component with Material Design 3 styling
@@ -35,7 +35,8 @@ const Navigation: React.FC = () => {
   const getNavItems = () => {
     const publicItems = [
       { label: 'Home', path: '/', icon: Trophy },
-      { label: 'Bracket', path: '/bracket', icon: Sword }
+      { label: 'Bracket', path: '/bracket', icon: Sword },
+      { label: 'Participants', path: '/participants', icon: Users }
     ]
 
     if (!user) {

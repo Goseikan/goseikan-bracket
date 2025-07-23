@@ -267,10 +267,16 @@ const generateTeamsForDojo = (dojoData: typeof SAMPLE_DOJOS_DATA[0], dojoId: str
     const endIndex = Math.min(startIndex + 7, participants.length)
     const teamParticipants = participants.slice(startIndex, endIndex)
     
+    // Generate team logo with different color
+    const teamColor = TEAM_LOGO_COLORS[i % TEAM_LOGO_COLORS.length]
+    const teamAbbrev = teamCount === 1 ? dojoData.abbreviation : `${dojoData.abbreviation}${String.fromCharCode(65 + i)}`
+    const teamLogo = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='${teamColor}'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='12' font-weight='bold' text-anchor='middle' fill='white'%3E${teamAbbrev}%3C/text%3E%3C/svg%3E`
+
     teams.push({
       id: `team_${dojoId}_${i + 1}`,
       name: teamName,
       dojoId,
+      logo: teamLogo, // Add team logo
       players: [], // Will be populated in assignUsersToTeams
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -340,6 +346,15 @@ const generateUsers = (): User[] => {
   return users
 }
 
+// Sample logo placeholders (using placeholder services for demo)
+const DOJO_LOGOS: Record<string, string> = {
+  "Bloomington Normal Kendo Club": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%234F46E5'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='14' font-weight='bold' text-anchor='middle' fill='white'%3EBNKC%3C/text%3E%3C/svg%3E",
+  "Cleveland Kendo Association": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23DC2626'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='16' font-weight='bold' text-anchor='middle' fill='white'%3ECKA%3C/text%3E%3C/svg%3E",
+  "Detroit Kendo Dojo": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23059669'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='16' font-weight='bold' text-anchor='middle' fill='white'%3EDKD%3C/text%3E%3C/svg%3E",
+  "Goseikan": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23B91C1C'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='16' font-weight='bold' text-anchor='middle' fill='white'%3EGSK%3C/text%3E%3C/svg%3E",
+  "Great Lakes Kendo Dojo": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%231D4ED8'/%3E%3Ctext x='50' y='50' font-family='Arial' font-size='12' font-weight='bold' text-anchor='middle' fill='white'%3EGLKD%3C/text%3E%3C/svg%3E"
+}
+
 /**
  * Generate sample dojos
  */
@@ -348,11 +363,15 @@ const generateDojos = (): Dojo[] => {
     id: `dojo_${dojoData.name.toLowerCase().replace(/\s+/g, '_')}`,
     name: dojoData.name,
     location: `${dojoData.name.split(' ')[0]}, USA`, // Approximate location
+    logo: DOJO_LOGOS[dojoData.name], // Add logo
     teams: [], // Will be populated later
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   }))
 }
+
+// Sample team logo colors (each team gets a different colored version)
+const TEAM_LOGO_COLORS = ['%23EF4444', '%23F59E0B', '%2310B981', '%233B82F6', '%236366F1', '%238B5CF6']
 
 /**
  * Generate sample teams
@@ -510,4 +529,22 @@ export const initializeSampleData = (): void => {
       courts: sampleData.courts.length
     })
   }
+}
+
+/**
+ * Reset and reinitialize sample data with logos
+ * Call this to update existing data with new logo fields
+ */
+export const resetSampleDataWithLogos = (): void => {
+  // Clear existing data
+  localStorage.removeItem('users')
+  localStorage.removeItem('dojos')
+  localStorage.removeItem('teams')
+  localStorage.removeItem('courts')
+  localStorage.removeItem('tournaments')
+  localStorage.removeItem('matches')
+  
+  // Reinitialize with logos
+  initializeSampleData()
+  console.log('Sample data reset with logos')
 }

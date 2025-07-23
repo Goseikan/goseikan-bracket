@@ -12,7 +12,7 @@ import { Trophy, Users, Calendar, BarChart3 } from 'lucide-react'
  */
 
 const BracketPage: React.FC = () => {
-  const { tournament, teams, dojos, getUserById } = useTournament()
+  const { tournament, teams, dojos } = useTournament()
 
   // Calculate tournament progress
   const progress = tournament ? getTournamentProgress(tournament) : null
@@ -143,100 +143,6 @@ const BracketPage: React.FC = () => {
               />
             )}
 
-            {/* Participating Teams by Dojo */}
-            <div className="card p-6">
-              <h2 className="text-title-large font-semibold text-gray-900 mb-6">
-                Participating Teams by Dojo
-              </h2>
-              <div className="space-y-8">
-                {dojos.map((dojo) => {
-                  const dojoTeams = teams.filter(team => team.dojoId === dojo.id)
-                  if (dojoTeams.length === 0) return null
-                  
-                  return (
-                    <div key={dojo.id} className="border border-gray-200 rounded-lg overflow-hidden">
-                      {/* Dojo Header */}
-                      <div className="bg-primary-50 px-6 py-4 border-b border-gray-200">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="text-title-large font-semibold text-primary-900">
-                              {dojo.name}
-                            </h3>
-                            <p className="text-body-medium text-primary-700 mt-1">
-                              {dojoTeams.length} team{dojoTeams.length !== 1 ? 's' : ''} • {dojoTeams.reduce((total, team) => total + team.players.length, 0)} participants
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-label-small text-primary-600 uppercase font-medium tracking-wide">
-                              Dojo
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Teams */}
-                      <div className="p-6">
-                        <div className="grid gap-6">
-                          {dojoTeams.map((team) => {
-                            const teamMembers = team.players
-                            
-                            return (
-                              <div key={team.id} className="bg-gray-50 rounded-lg p-5">
-                                {/* Team Header */}
-                                <div className="flex items-center justify-between mb-4">
-                                  <div className="flex items-center">
-                                    <div className="w-10 h-10 bg-accent-400 rounded-full flex items-center justify-center mr-3">
-                                      <Users className="w-5 h-5 text-gray-900" />
-                                    </div>
-                                    <div>
-                                      <h4 className="text-title-medium font-semibold text-gray-900">
-                                        {team.name}
-                                      </h4>
-                                      <p className="text-body-small text-gray-600">
-                                        {teamMembers.length} member{teamMembers.length !== 1 ? 's' : ''}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  {team.seedRanking && (
-                                    <div className="bg-primary-100 text-primary-800 px-3 py-1 rounded-full text-label-small font-medium">
-                                      Seed #{team.seedRanking}
-                                    </div>
-                                  )}
-                                </div>
-                                
-                                {/* Team Members */}
-                                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                  {teamMembers.map((member) => (
-                                    <div key={member.id} className="bg-white rounded-lg p-3 border border-gray-200">
-                                      <div className="flex items-center justify-between">
-                                        <div className="flex-1 min-w-0">
-                                          <p className="text-body-medium font-medium text-gray-900 truncate">
-                                            {member.fullName}
-                                          </p>
-                                          <div className="flex items-center mt-1">
-                                            <div className={`inline-flex items-center px-2 py-1 rounded-full text-label-small font-medium ${
-                                              member.kendoRank.includes('Dan') ? 'bg-red-100 text-red-800' :
-                                              member.kendoRank.includes('Kyu') ? 'bg-yellow-100 text-yellow-800' :
-                                              'bg-gray-100 text-gray-800'
-                                            }`}>
-                                              {member.kendoRank}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
           </div>
         ) : (
           <div className="card p-8 text-center">

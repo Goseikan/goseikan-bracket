@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
 import BracketPage from './pages/BracketPage'
+import ParticipantsPage from './pages/ParticipantsPage'
 import AdminPage from './pages/AdminPage'
 import CourtPage from './pages/CourtPage'
 import PublicCourtPage from './pages/PublicCourtPage'
@@ -33,6 +34,7 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/bracket" element={<BracketPage />} />
+                <Route path="/participants" element={<ParticipantsPage />} />
                 <Route path="/court/:courtId/public" element={<PublicCourtPage />} />
                 
                 {/* Protected routes for authenticated users */}

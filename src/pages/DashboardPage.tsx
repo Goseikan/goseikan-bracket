@@ -1,8 +1,10 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTournament } from '../contexts/TournamentContext'
 import { sortDojoMembersByRank, getRankBadgeClass } from '../utils/kendoRanks'
-import { User, Users, Trophy, MapPin } from 'lucide-react'
+import DojoManagement from '../components/DojoManagement'
+import { resetSampleDataWithLogos } from '../utils/sampleData'
+import { User, Users, Trophy, MapPin, Building, Settings, RefreshCw } from 'lucide-react'
 
 /**
  * DashboardPage component - User's personal tournament dashboard
@@ -19,6 +21,8 @@ const DashboardPage: React.FC = () => {
     getTeamById, 
     getDojoById 
   } = useTournament()
+
+  const [activeTab, setActiveTab] = useState<'overview' | 'dojo'>('overview')
 
   if (!user) {
     return null
@@ -46,7 +50,41 @@ const DashboardPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        {/* Tab Navigation */}
+        <div className="border-b border-gray-200 mb-8">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'overview'
+                  ? 'border-primary-500 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center">
+                <User className="w-4 h-4 mr-2" />
+                Overview
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('dojo')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'dojo'
+                  ? 'border-primary-500 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center">
+                <Building className="w-4 h-4 mr-2" />
+                Dojo Management
+              </div>
+            </button>
+          </nav>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'overview' ? (
+          <div className="grid lg:grid-cols-3 gap-8">
           {/* Personal Information */}
           <div className="lg:col-span-1">
             <div className="card p-6 mb-6">
@@ -225,7 +263,44 @@ const DashboardPage: React.FC = () => {
               )}
             </div>
           </div>
-        </div>
+          </div>
+        ) : (
+          /* Dojo Management Tab */
+          <div className="space-y-8">
+            <DojoManagement />
+            
+            {/* Admin Tools */}
+            {user.role === 'admin' && (
+              <div className="card p-6">
+                <h3 className="text-title-large font-semibold text-gray-900 mb-4">
+                  Admin Tools
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-title-medium font-medium text-gray-900 mb-2">
+                      Sample Data Management
+                    </h4>
+                    <p className="text-body-medium text-gray-600 mb-4">
+                      Reset sample data to include logo placeholders for all dojos and teams.
+                    </p>
+                    <button
+                      onClick={() => {
+                        if (confirm('This will reset all sample data and reload the page. Continue?')) {
+                          resetSampleDataWithLogos()
+                          window.location.reload()
+                        }
+                      }}
+                      className="btn-outlined flex items-center"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Reset Sample Data with Logos
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

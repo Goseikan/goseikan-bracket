@@ -32,6 +32,7 @@ export interface Dojo {
   id: string
   name: string
   location?: string
+  logo?: string // Base64 encoded image or URL
   teams: Team[]
   createdAt: string
   updatedAt: string
@@ -41,6 +42,7 @@ export interface Team {
   id: string
   name: string
   dojoId: string
+  logo?: string // Base64 encoded image or URL
   players: User[]
   seedRanking?: number
   finalRanking?: number
