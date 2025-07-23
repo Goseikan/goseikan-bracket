@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react'
 import { useTournament } from '../contexts/TournamentContext'
 import SearchBar from '../components/SearchBar'
 import { searchParticipants, getSearchSuggestions, highlightMatch } from '../utils/searchUtils'
+import { getRankBadgeClass } from '../utils/kendoRanks'
 import { Users, Trophy, Filter } from 'lucide-react'
 
 /**
@@ -231,13 +232,9 @@ const ParticipantsPage: React.FC = () => {
                                           />
                                           <div className="flex items-center mt-1">
                                             <div 
-                                              className={`inline-flex items-center px-2 py-1 rounded-full text-label-small font-medium ${
-                                                member.kendoRank.includes('Dan') ? 'bg-red-100 text-red-800' :
-                                                member.kendoRank.includes('Kyu') ? 'bg-yellow-100 text-yellow-800' :
-                                                'bg-gray-100 text-gray-800'
-                                              }`}
+                                              className={getRankBadgeClass(member.kendoRank)}
                                               dangerouslySetInnerHTML={{ 
-                                                __html: highlightMatch(member.kendoRank, searchQuery) 
+                                                __html: highlightMatch(member.kendoRank || 'Mudansha', searchQuery) 
                                               }}
                                             />
                                           </div>

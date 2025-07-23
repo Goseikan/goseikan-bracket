@@ -3,7 +3,10 @@ import { useAuth } from '../contexts/AuthContext'
 import { useTournament } from '../contexts/TournamentContext'
 import AdminControls from '../components/AdminControls'
 import CourtManagement from '../components/CourtManagement'
-import { Settings, Users, Trophy, Monitor, BarChart3 } from 'lucide-react'
+import UserManagement from '../components/UserManagement'
+import DojoManagement from '../components/DojoAdminManagement'
+import TeamManagement from '../components/TeamManagement'
+import { Settings, Users, Trophy, Monitor, BarChart3, Building, UserCheck } from 'lucide-react'
 
 /**
  * AdminPage component - Tournament administration interface
@@ -13,7 +16,7 @@ import { Settings, Users, Trophy, Monitor, BarChart3 } from 'lucide-react'
 const AdminPage: React.FC = () => {
   const { user } = useAuth()
   const { tournament, teams, dojos, users } = useTournament()
-  const [activeTab, setActiveTab] = useState<'tournament' | 'courts'>('tournament')
+  const [activeTab, setActiveTab] = useState<'tournament' | 'courts' | 'users' | 'dojos' | 'teams'>('tournament')
 
   // Calculate statistics
   const stats = {
@@ -83,7 +86,7 @@ const AdminPage: React.FC = () => {
         {/* Tab Navigation */}
         <div className="mb-8">
           <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
+            <nav className="-mb-px flex space-x-8 overflow-x-auto">
               <button
                 onClick={() => setActiveTab('tournament')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
@@ -93,7 +96,7 @@ const AdminPage: React.FC = () => {
                 }`}
               >
                 <Trophy className="w-5 h-5 inline mr-2" />
-                Tournament Controls
+                Tournament
               </button>
               <button
                 onClick={() => setActiveTab('courts')}
@@ -104,7 +107,40 @@ const AdminPage: React.FC = () => {
                 }`}
               >
                 <Monitor className="w-5 h-5 inline mr-2" />
-                Court Management
+                Courts
+              </button>
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'users'
+                    ? 'border-primary-600 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <UserCheck className="w-5 h-5 inline mr-2" />
+                Users
+              </button>
+              <button
+                onClick={() => setActiveTab('dojos')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'dojos'
+                    ? 'border-primary-600 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Building className="w-5 h-5 inline mr-2" />
+                Dojos
+              </button>
+              <button
+                onClick={() => setActiveTab('teams')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'teams'
+                    ? 'border-primary-600 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Users className="w-5 h-5 inline mr-2" />
+                Teams
               </button>
             </nav>
           </div>
@@ -114,6 +150,9 @@ const AdminPage: React.FC = () => {
         <div className="mb-8">
           {activeTab === 'tournament' && <AdminControls />}
           {activeTab === 'courts' && <CourtManagement />}
+          {activeTab === 'users' && <UserManagement />}
+          {activeTab === 'dojos' && <DojoManagement />}
+          {activeTab === 'teams' && <TeamManagement />}
         </div>
 
         {/* Admin Functions Grid */}

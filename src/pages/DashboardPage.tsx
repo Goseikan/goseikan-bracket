@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useTournament } from '../contexts/TournamentContext'
 import { sortDojoMembersByRank, getRankBadgeClass } from '../utils/kendoRanks'
 import DojoManagement from '../components/DojoManagement'
+import UserSettings from '../components/UserSettings'
 import { resetSampleDataWithLogos } from '../utils/sampleData'
 import { User, Users, Trophy, MapPin, Building, Settings, RefreshCw } from 'lucide-react'
 
@@ -22,7 +23,7 @@ const DashboardPage: React.FC = () => {
     getDojoById 
   } = useTournament()
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'dojo'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'dojo' | 'settings'>('overview')
 
   if (!user) {
     return null
@@ -77,6 +78,19 @@ const DashboardPage: React.FC = () => {
               <div className="flex items-center">
                 <Building className="w-4 h-4 mr-2" />
                 Dojo Management
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'settings'
+                  ? 'border-primary-500 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center">
+                <Settings className="w-4 h-4 mr-2" />
+                Settings
               </div>
             </button>
           </nav>
@@ -264,7 +278,7 @@ const DashboardPage: React.FC = () => {
             </div>
           </div>
           </div>
-        ) : (
+        ) : activeTab === 'dojo' ? (
           /* Dojo Management Tab */
           <div className="space-y-8">
             <DojoManagement />
@@ -300,6 +314,9 @@ const DashboardPage: React.FC = () => {
               </div>
             )}
           </div>
+        ) : (
+          /* Settings Tab */
+          <UserSettings />
         )}
       </div>
     </div>

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react'
 import { AuthUser, LoginCredentials, RegisterData } from '../types'
+import { authAPI } from '../utils/api'
 
 /**
  * Authentication Context for managing user login state
@@ -20,12 +21,14 @@ type AuthAction =
   | { type: 'REGISTER_START' }
   | { type: 'REGISTER_SUCCESS'; payload: AuthUser }
   | { type: 'REGISTER_ERROR'; payload: string }
+  | { type: 'UPDATE_PROFILE'; payload: Partial<AuthUser> }
   | { type: 'CLEAR_ERROR' }
 
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>
   register: (data: RegisterData) => Promise<void>
   logout: () => void
+  updateUserProfile: (updates: Partial<AuthUser>) => void
   clearError: () => void
 }
 
@@ -48,6 +51,12 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
     
     case 'LOGOUT':
       return { ...state, user: null, loading: false, error: null }
+    
+    case 'UPDATE_PROFILE':
+      return { 
+        ...state, 
+        user: state.user ? { ...state.user, ...action.payload } : null 
+      }
     
     case 'CLEAR_ERROR':
       return { ...state, error: null }
@@ -88,30 +97,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     dispatch({ type: 'LOGIN_START' })
     
     try {
-      // Get users from localStorage (simulating API call)
-      const users = JSON.parse(localStorage.getItem('users') || '[]')
-      const user = users.find((u: any) => 
-        u.email === credentials.email && u.password === credentials.password
-      )
+      const isDevelopment = process.env.NODE_ENV === 'development' && !process.env.DATABASE_URL
+      
+      if (isDevelopment) {
+        // Get users from localStorage (simulating API call)
+        const users = JSON.parse(localStorage.getItem('users') || '[]')
+        const user = users.find((u: any) => 
+          u.email === credentials.email && u.password === credentials.password
+        )
 
-      if (!user) {
-        throw new Error('Invalid email or password')
+        if (!user) {
+          throw new Error('Invalid email or password')
+        }
+
+        // Create AuthUser object (excluding password)
+        const authUser: AuthUser = {
+          id: user.id,
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+          dojoId: user.dojoId,
+          teamId: user.teamId,
+          kendoRank: user.kendoRank
+        }
+
+        // Store in localStorage for persistence
+        localStorage.setItem('authUser', JSON.stringify(authUser))
+        dispatch({ type: 'LOGIN_SUCCESS', payload: authUser })
+      } else {
+        // Use API for authentication
+        const result = await authAPI.login(credentials.email, credentials.password)
+        
+        if (!result.success || !result.data) {
+          throw new Error(result.error || 'Login failed')
+        }
+
+        // Create AuthUser object
+        const authUser: AuthUser = {
+          id: result.data.id,
+          fullName: result.data.fullName,
+          email: result.data.email,
+          role: result.data.role,
+          dojoId: result.data.dojoId,
+          teamId: result.data.teamId || '',
+          kendoRank: result.data.kendoRank
+        }
+
+        // Store in localStorage for persistence
+        localStorage.setItem('authUser', JSON.stringify(authUser))
+        dispatch({ type: 'LOGIN_SUCCESS', payload: authUser })
       }
-
-      // Create AuthUser object (excluding password)
-      const authUser: AuthUser = {
-        id: user.id,
-        fullName: user.fullName,
-        email: user.email,
-        role: user.role,
-        dojoId: user.dojoId,
-        teamId: user.teamId,
-        kendoRank: user.kendoRank
-      }
-
-      // Store in localStorage for persistence
-      localStorage.setItem('authUser', JSON.stringify(authUser))
-      dispatch({ type: 'LOGIN_SUCCESS', payload: authUser })
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed'
       dispatch({ type: 'LOGIN_ERROR', payload: errorMessage })
@@ -225,11 +260,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     dispatch({ type: 'CLEAR_ERROR' })
   }
 
+  /**
+   * Update user profile function
+   */
+  const updateUserProfile = (updates: Partial<AuthUser>): void => {
+    dispatch({ type: 'UPDATE_PROFILE', payload: updates })
+    
+    // Update localStorage
+    if (state.user) {
+      const updatedUser = { ...state.user, ...updates }
+      localStorage.setItem('authUser', JSON.stringify(updatedUser))
+    }
+  }
+
   const value: AuthContextType = {
     ...state,
     login,
     register,
     logout,
+    updateUserProfile,
     clearError
   }
 

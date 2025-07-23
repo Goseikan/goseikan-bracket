@@ -1,11 +1,76 @@
-# React + TypeScript + Vite
+# Goseikan Kendo Tournament Bracket System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern tournament management system for Kendo competitions, built with React, TypeScript, and deployed on Vercel with Neon PostgreSQL database.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Tournament Management**: Create and manage tournaments with multiple formats
+- **Team & Participant Registration**: Handle dojo registrations and team formations
+- **Bracket Generation**: Double elimination tournament brackets
+- **Match Scoring**: Detailed kendo match scoring with timing and actions
+- **Court Management**: Multi-court tournament coordination
+- **Admin Dashboard**: Complete tournament administration interface
+- **Responsive Design**: Works on desktop and mobile devices
+
+## Tech Stack
+
+- **Frontend**: React 19, TypeScript, Tailwind CSS, Vite
+- **Backend**: Vercel serverless functions
+- **Database**: Neon PostgreSQL with Drizzle ORM
+- **Deployment**: Vercel
+- **Authentication**: Custom JWT-based authentication
+
+## Quick Start
+
+### Development Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd goseikan-bracket
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   # Add your Neon database URL to .env
+   ```
+
+4. **Run database migrations**
+   ```bash
+   npm run db:migrate
+   npm run db:seed
+   ```
+
+5. **Start development server**
+   ```bash
+   npm run dev
+   ```
+
+### Production Deployment
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete deployment instructions.
+
+## Database Scripts
+
+- `npm run db:generate` - Generate migration files
+- `npm run db:migrate` - Run database migrations  
+- `npm run db:seed` - Seed database with sample data
+- `npm run db:push` - Push schema changes to database
+
+## Environment Modes
+
+The application automatically detects the environment:
+
+- **Development**: Uses localStorage when no DATABASE_URL is configured
+- **Production**: Uses Neon PostgreSQL when DATABASE_URL is present
+
+This allows for seamless development without requiring a database setup locally.
 
 ## Expanding the ESLint configuration
 

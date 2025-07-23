@@ -494,17 +494,42 @@ const assignUsersToTeams = (users: User[], teams: Team[]): { users: User[], team
   const updatedUsers = [...users]
   const updatedTeams = [...teams]
   
-  // Create a map of team ID to team for quick lookup
-  const teamMap = new Map(updatedTeams.map(team => [team.id, team]))
-  
   // Assign each user to the appropriate team
   updatedUsers.forEach(user => {
     if (user.role === 'admin') return // Skip admin users
     
-    // Find the first team for this user's dojo
-    const userTeam = updatedTeams.find(team => 
+    // Find the first team for this user's dojo that has space
+    let userTeam = updatedTeams.find(team => 
       team.dojoId === user.dojoId && team.players.length < 7
     )
+    
+    // If no team has space, create a new team for this dojo
+    if (!userTeam) {
+      const dojoId = user.dojoId
+      const dojo = SAMPLE_DOJOS_DATA.find(d => `dojo_${d.name.toLowerCase().replace(/\s+/g, '_')}` === dojoId)
+      if (dojo) {
+        const existingTeamsForDojo = updatedTeams.filter(t => t.dojoId === user.dojoId)
+        const teamIndex = existingTeamsForDojo.length
+        const teamName = `${dojo.name} Team ${String.fromCharCode(65 + teamIndex)}` // A, B, C, etc.
+        
+        // Generate team logo with different color
+        const teamColor = TEAM_LOGO_COLORS[teamIndex % TEAM_LOGO_COLORS.length]
+        const teamAbbrev = `${dojo.abbreviation}${String.fromCharCode(65 + teamIndex)}`
+        const teamLogo = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='${teamColor}'/%3E%3Ctext x='50' y='55' font-family='Arial' font-size='12' font-weight='bold' text-anchor='middle' fill='white'%3E${teamAbbrev}%3C/text%3E%3C/svg%3E`
+
+        userTeam = {
+          id: `team_${user.dojoId}_${teamIndex + 1}`,
+          name: teamName,
+          dojoId: user.dojoId,
+          logo: teamLogo,
+          players: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+        
+        updatedTeams.push(userTeam)
+      }
+    }
     
     if (userTeam) {
       user.teamId = userTeam.id

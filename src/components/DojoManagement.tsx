@@ -112,7 +112,7 @@ const DojoManagement: React.FC = () => {
       setLoading(true)
       setError('')
       
-      const newDojo = addDojo(newDojoName.trim(), newDojoLocation.trim())
+      const newDojo = await addDojo(newDojoName.trim(), newDojoLocation.trim())
       
       setSuccess(`Dojo "${newDojo.name}" created successfully with auto-generated logo!`)
       setNewDojoName('')
@@ -136,7 +136,7 @@ const DojoManagement: React.FC = () => {
       setLoading(true)
       setError('')
       
-      const newTeam = addTeam(newTeamName.trim(), userDojo.id)
+      const newTeam = await addTeam(newTeamName.trim(), userDojo.id)
       
       setSuccess(`Team "${newTeam.name}" created successfully with auto-generated logo!`)
       setNewTeamName('')

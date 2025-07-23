@@ -13,7 +13,7 @@ import { User, Users, Eye, EyeOff, AlertCircle } from 'lucide-react'
 
 const RegisterPage: React.FC = () => {
   const { register, loading, error, clearError } = useAuth()
-  const { dojos, teams, getUsersByDojoId } = useTournament()
+  const { dojos, teams, getUsersByDojoId, loadTournamentData } = useTournament()
   const navigate = useNavigate()
 
   // Form state
@@ -157,6 +157,10 @@ const RegisterPage: React.FC = () => {
 
     try {
       await register(formData)
+      
+      // Refresh tournament data to include the new user immediately
+      await loadTournamentData()
+      
       navigate('/dashboard')
     } catch (error) {
       // Error is handled by auth context

@@ -12,14 +12,16 @@
 export type KendoRank = 
   | 'Mudansha'
   | '10 Kyu' | '9 Kyu' | '8 Kyu' | '7 Kyu' | '6 Kyu' | '5 Kyu' | '4 Kyu' | '3 Kyu' | '2 Kyu' | '1 Kyu'
-  | '1 Dan' | '2 Dan' | '3 Dan' | '4 Dan' | '5 Dan' | '6 Dan' | '7 Dan' | '8 Dan' | '9 Dan' | '10 Dan'
+  | '1 Dan' | '2 Dan' | '3 Dan' | '4 Dan' | '5 Dan' | '6 Dan' | '7 Dan' | '8 Dan'
 
 export interface User {
   id: string
   fullName: string
   dateOfBirth: string
   dojoId: string
-  teamId: string
+  dojoName?: string
+  teamId?: string
+  teamName?: string
   role: 'participant' | 'admin'
   email: string
   password: string // hashed

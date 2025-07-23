@@ -9,7 +9,7 @@ import { KendoRank } from '../types'
 export const KENDO_RANKS: KendoRank[] = [
   'Mudansha',
   '10 Kyu', '9 Kyu', '8 Kyu', '7 Kyu', '6 Kyu', '5 Kyu', '4 Kyu', '3 Kyu', '2 Kyu', '1 Kyu',
-  '1 Dan', '2 Dan', '3 Dan', '4 Dan', '5 Dan', '6 Dan', '7 Dan', '8 Dan', '9 Dan', '10 Dan'
+  '1 Dan', '2 Dan', '3 Dan', '4 Dan', '5 Dan', '6 Dan', '7 Dan', '8 Dan'
 ]
 
 /**
@@ -45,7 +45,8 @@ export const sortDojoMembersByRank = <T extends { kendoRank: KendoRank }>(users:
 /**
  * Get rank category for grouping/styling purposes
  */
-export const getRankCategory = (rank: KendoRank): 'mudansha' | 'kyu' | 'dan' => {
+export const getRankCategory = (rank: KendoRank | undefined | null): 'mudansha' | 'kyu' | 'dan' => {
+  if (!rank) return 'mudansha' // Default fallback for undefined/null ranks
   if (rank === 'Mudansha') return 'mudansha'
   if (rank.includes('Kyu')) return 'kyu'
   return 'dan'
@@ -54,7 +55,12 @@ export const getRankCategory = (rank: KendoRank): 'mudansha' | 'kyu' | 'dan' => 
 /**
  * Get CSS class for rank badge styling
  */
-export const getRankBadgeClass = (rank: KendoRank): string => {
+export const getRankBadgeClass = (rank: KendoRank | undefined | null): string => {
+  if (!rank) {
+    // Fallback for undefined/null ranks
+    return 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800'
+  }
+  
   const category = getRankCategory(rank)
   const baseClasses = 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium'
   
@@ -102,6 +108,6 @@ export const GROUPED_RANKS = {
   ] as KendoRank[],
   dan: [
     '1 Dan', '2 Dan', '3 Dan', '4 Dan', '5 Dan', 
-    '6 Dan', '7 Dan', '8 Dan', '9 Dan', '10 Dan'
+    '6 Dan', '7 Dan', '8 Dan'
   ] as KendoRank[]
 }
