@@ -149,7 +149,7 @@ const DashboardPage: React.FC = () => {
               <div className="space-y-6">
                 {dojoTeams.map((team) => {
                   const teamMembers = team.players
-                    .map(playerId => getUserById(playerId))
+                    .map((player: any) => typeof player === 'string' ? getUserById(player) : player)
                     .filter(Boolean)
                     .sort((a, b) => sortDojoMembersByRank([a!, b!]).indexOf(a!) - sortDojoMembersByRank([a!, b!]).indexOf(b!))
 

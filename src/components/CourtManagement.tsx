@@ -92,7 +92,7 @@ const CourtManagement: React.FC<CourtManagementProps> = ({
     }
 
     const updatedTournament = updateMatchInTournament(tournament, updatedMatch)
-    updatedTournament.courts = updatedTournament.courts.map(c => 
+    updatedTournament.courts = updatedTournament.courts.map((c: any) => 
       c.id === courtId ? updatedCourt : c
     )
 

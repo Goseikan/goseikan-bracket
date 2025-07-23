@@ -1,4 +1,4 @@
-import { Team, Group, TeamStanding, Match, Tournament } from '../types'
+import type { Team, Group, TeamStanding, Match, Tournament } from '../types'
 import { createEmptyMatchScore } from './kendoMatchLogic'
 
 /**

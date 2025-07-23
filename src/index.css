@@ -170,8 +170,11 @@
   
   /* Material Design 3 Navigation */
   .nav-bar {
-    @apply bg-white border-b border-gray-200 px-4 py-3;
+    @apply bg-white border-b border-gray-200 px-4 py-3 relative;
     box-shadow: var(--md-elevation-2);
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 9999 !important;
   }
   
   /* Material Design 3 Surface styles */

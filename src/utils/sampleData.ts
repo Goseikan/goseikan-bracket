@@ -271,7 +271,7 @@ const generateTeamsForDojo = (dojoData: typeof SAMPLE_DOJOS_DATA[0], dojoId: str
       id: `team_${dojoId}_${i + 1}`,
       name: teamName,
       dojoId,
-      players: teamParticipants.map(p => `user_${p.name.replace(/\s+/g, '_').toLowerCase()}`),
+      players: [], // Will be populated in assignUsersToTeams
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     })
@@ -424,7 +424,12 @@ const generateTournament = (): Tournament => {
       type: 'double_elimination',
       rounds: []
     },
-    courts: ['court_a', 'court_b', 'court_c', 'court_d'],
+    courts: [
+      { id: 'court_a', name: 'Court A', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'court_b', name: 'Court B', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'court_c', name: 'Court C', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: 'court_d', name: 'Court D', isActive: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+    ],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   }
@@ -451,8 +456,8 @@ const assignUsersToTeams = (users: User[], teams: Team[]): { users: User[], team
     
     if (userTeam) {
       user.teamId = userTeam.id
-      if (!userTeam.players.includes(user.id)) {
-        userTeam.players.push(user.id)
+      if (!userTeam.players.some((p: any) => p.id === user.id)) {
+        userTeam.players.push(user)
       }
     }
   })

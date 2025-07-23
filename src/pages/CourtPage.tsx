@@ -234,7 +234,7 @@ const CourtPage: React.FC = () => {
     }
 
     const updatedMatch = { ...currentMatch }
-    updatedMatch.overtime.actions.push(action)
+    updatedMatch.overtime!.actions.push(action)
     
     // First scoring action wins in overtime
     const team1Player = teams.find(t => t.id === currentMatch.team1Id)?.players.find(p => p.id === currentMatch.overtime!.team1PlayerId)
@@ -246,8 +246,8 @@ const CourtPage: React.FC = () => {
       updatedMatch.winnerId = currentMatch.team2Id
     }
     
-    updatedMatch.overtime.winnerId = updatedMatch.winnerId
-    updatedMatch.overtime.completedAt = new Date().toISOString()
+    updatedMatch.overtime!.winnerId = updatedMatch.winnerId
+    updatedMatch.overtime!.completedAt = new Date().toISOString()
     updatedMatch.status = 'completed'
     updatedMatch.completedAt = new Date().toISOString()
 

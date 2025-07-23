@@ -61,7 +61,7 @@ const Navigation: React.FC = () => {
   const navItems = getNavItems()
 
   return (
-    <nav className="nav-bar sticky top-0 z-50 bg-white">
+    <nav className="nav-bar sticky top-0 z-[9999] bg-white">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between">
           {/* Logo and brand */}
@@ -85,6 +85,7 @@ const Navigation: React.FC = () => {
                 <Link
                   key={item.path}
                   to={item.path}
+                  onClick={closeMobileMenu}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                     isActivePath(item.path)
                       ? 'bg-primary-100 text-primary-700'
@@ -131,7 +132,7 @@ const Navigation: React.FC = () => {
 
         {/* Mobile navigation menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden mt-4 pb-4 border-t border-gray-200">
+          <div className="md:hidden mt-4 pb-4 border-t border-gray-200 relative z-[10000]">
             <div className="pt-4 space-y-1">
               {navItems.map((item) => {
                 const Icon = item.icon

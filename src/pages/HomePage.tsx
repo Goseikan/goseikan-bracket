@@ -2,7 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useTournament } from '../contexts/TournamentContext'
-import { Trophy, Users, Sword, Calendar, ArrowRight } from 'lucide-react'
+import { Trophy, Users, Sword, Calendar, ArrowRight, User } from 'lucide-react'
 
 /**
  * HomePage component - Landing page with Material Design 3 styling

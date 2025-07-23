@@ -136,9 +136,9 @@ const BracketPage: React.FC = () => {
             )}
 
             {/* Main Stage Bracket */}
-            {tournament.status === 'main' && tournament.qualifiedTeams && (
+            {tournament.status === 'main' && tournament.mainBracket && (
               <DoubleEliminationBracket
-                qualifiedTeams={tournament.qualifiedTeams}
+                qualifiedTeams={teams.filter(team => team.seedRanking && team.seedRanking <= 2)}
                 onMatchClick={handleMatchClick}
               />
             )}

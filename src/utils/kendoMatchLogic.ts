@@ -1,4 +1,4 @@
-import { Match, MatchScore, PlayerSetResult, ScoringAction } from '../types'
+import type { Match, MatchScore, PlayerSetResult, ScoringAction } from '../types'
 
 /**
  * Kendo match logic utilities

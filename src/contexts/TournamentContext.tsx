@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react'
-import { Tournament, Match, Court, Dojo, Team, User } from '../types'
+import type { Tournament, Match, Court, Dojo, Team, User } from '../types'
 import { migrateTournamentData, isDataMigrationNeeded } from '../utils/dataMigration'
 
 /**
