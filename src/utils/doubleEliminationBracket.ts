@@ -49,6 +49,62 @@ export const generateDoubleEliminationBracket = (qualifiedTeams: Team[]) => {
 }
 
 /**
+ * Generate smart pairings that avoid same-dojo conflicts when possible
+ * While maintaining reasonable competitive balance
+ */
+export const generateSmartPairings = (teams: Team[]): Array<[Team, Team | undefined]> => {
+  const pairings: Array<[Team, Team | undefined]> = []
+  const availableTeams = [...teams]
+  
+  while (availableTeams.length > 1) {
+    // Take the highest seed available
+    const team1 = availableTeams.shift()!
+    
+    // Find the best opponent that's not from the same dojo
+    let bestOpponentIndex = -1
+    let bestScore = -1
+    
+    for (let i = 0; i < availableTeams.length; i++) {
+      const candidate = availableTeams[i]
+      let score = 0
+      
+      // Prefer opponents from different dojos
+      if (candidate.dojoId !== team1.dojoId) {
+        score += 100
+      }
+      
+      // Prefer opponents with similar but opposing seed strength
+      // Closer to traditional seeding gets bonus points
+      const idealOpponent = teams.length - 1 - teams.indexOf(team1)
+      const candidatePosition = teams.indexOf(candidate)
+      const distanceFromIdeal = Math.abs(candidatePosition - idealOpponent)
+      score += Math.max(0, 50 - distanceFromIdeal * 5)
+      
+      if (score > bestScore) {
+        bestScore = score
+        bestOpponentIndex = i
+      }
+    }
+    
+    // If we found a good opponent, pair them
+    if (bestOpponentIndex >= 0) {
+      const team2 = availableTeams.splice(bestOpponentIndex, 1)[0]
+      pairings.push([team1, team2])
+    } else {
+      // No opponent available (shouldn't happen with even number of teams)
+      pairings.push([team1, undefined])
+    }
+  }
+  
+  // Handle odd number of teams (bye)
+  if (availableTeams.length === 1) {
+    pairings.push([availableTeams[0], undefined])
+  }
+  
+  return pairings
+}
+
+/**
  * Generate winners bracket matches
  */
 export const generateWinnersBracket = (teams: Team[]): BracketMatch[] => {
@@ -56,26 +112,40 @@ export const generateWinnersBracket = (teams: Team[]): BracketMatch[] => {
   const numTeams = teams.length
   const rounds = Math.ceil(Math.log2(numTeams))
   
-  // First round - initial pairings with seeding
-  const firstRoundMatches = Math.floor(numTeams / 2)
+  // Generate smart pairings that avoid same-dojo conflicts
+  const pairings = generateSmartPairings(teams)
   
-  for (let i = 0; i < firstRoundMatches; i++) {
-    // Standard tournament seeding: 1vs8, 2vs7, 3vs6, 4vs5, etc.
-    const team1Index = i
-    const team2Index = numTeams - 1 - i
+  // Create first round matches from pairings
+  pairings.forEach((pairing, index) => {
+    const [team1, team2] = pairing
     
-    matches.push({
-      id: `winners_r1_m${i + 1}`,
-      position: i + 1,
-      round: 1,
-      isWinnersBracket: true,
-      team1: teams[team1Index],
-      team2: team2Index < numTeams ? teams[team2Index] : undefined,
-      status: 'ready',
-      nextWinnerMatch: `winners_r2_m${Math.floor(i / 2) + 1}`,
-      nextLoserMatch: `losers_r1_m${i + 1}`
-    })
-  }
+    if (team2) {
+      // Regular match
+      matches.push({
+        id: `winners_r1_m${index + 1}`,
+        position: index + 1,
+        round: 1,
+        isWinnersBracket: true,
+        team1,
+        team2,
+        status: 'ready',
+        nextWinnerMatch: `winners_r2_m${Math.floor(index / 2) + 1}`,
+        nextLoserMatch: `losers_r1_m${index + 1}`
+      })
+    } else {
+      // Bye match
+      matches.push({
+        id: `winners_r1_bye_${index + 1}`,
+        position: index + 1,
+        round: 1,
+        isWinnersBracket: true,
+        team1,
+        winner: team1,
+        status: 'completed',
+        nextWinnerMatch: `winners_r2_m${Math.floor(index / 2) + 1}`
+      })
+    }
+  })
   
   // Handle byes for odd number of teams
   if (numTeams % 2 === 1) {
