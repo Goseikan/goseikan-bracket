@@ -346,21 +346,26 @@ const DojoManagement: React.FC = () => {
   // Handle member reordering
   const handleMoveMember = async (teamId: string, memberId: string, direction: 'up' | 'down') => {
     const team = userTeams.find(t => t.id === teamId)
-    if (!team || !team.players) return
+    if (!team) return
 
-    const currentIndex = team.players.findIndex((p: any) => p.id === memberId)
+    // Ensure players array exists and is 7 positions long
+    const currentPlayers = team.players || []
+    const playersArray = Array.from({ length: 7 }, (_, i) => currentPlayers[i] || null)
+
+    const currentIndex = playersArray.findIndex((p: any) => p?.id === memberId)
     if (currentIndex === -1) return
     
     const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
-    if (newIndex < 0 || newIndex >= team.players.length) return
+    if (newIndex < 0 || newIndex >= 7) return
     
     try {
-      // Create new players array with swapped positions
-      const newPlayers = [...team.players]
+      // Swap positions in the 7-position array
+      const newPlayers = [...playersArray]
       const temp = newPlayers[currentIndex]
       newPlayers[currentIndex] = newPlayers[newIndex]
       newPlayers[newIndex] = temp
       
+      // Store the full 7-position array to preserve vacant spots
       await updateTeam(teamId, { players: newPlayers })
     } catch (error) {
       console.error('Failed to reorder team members:', error)
@@ -379,27 +384,49 @@ const DojoManagement: React.FC = () => {
     e.dataTransfer.dropEffect = 'move'
   }
 
-  const handleMemberDrop = async (e: React.DragEvent, targetMember: any, teamId: string) => {
+  const handleMemberDrop = async (e: React.DragEvent, targetMember: any, teamId: string, targetPosition?: number) => {
     e.preventDefault()
-    if (!draggedMember || draggedMember.id === targetMember.id) {
+    if (!draggedMember) {
       setDraggedMember(null)
       return
     }
 
     try {
       const team = userTeams.find(t => t.id === teamId)
-      if (!team || !team.players) return
+      if (!team) return
 
-      const draggedIndex = team.players.findIndex((p: any) => p.id === draggedMember.id)
-      const targetIndex = team.players.findIndex((p: any) => p.id === targetMember.id)
+      // Ensure players array exists and is 7 positions long
+      const currentPlayers = team.players || []
+      const playersArray = Array.from({ length: 7 }, (_, i) => currentPlayers[i] || null)
+
+      const draggedIndex = playersArray.findIndex((p: any) => p?.id === draggedMember.id)
+      if (draggedIndex === -1) return
+
+      // Use targetPosition if provided, otherwise find target member position
+      let targetIndex = targetPosition
+      if (targetIndex === undefined) {
+        targetIndex = targetMember ? playersArray.findIndex((p: any) => p?.id === targetMember.id) : -1
+      }
       
-      if (draggedIndex === -1 || targetIndex === -1) return
+      if (targetIndex === -1 || targetIndex === draggedIndex) {
+        setDraggedMember(null)
+        return
+      }
 
       // Create new players array with reordered members
-      const newPlayers = [...team.players]
-      const draggedPlayer = newPlayers.splice(draggedIndex, 1)[0]
-      newPlayers.splice(targetIndex, 0, draggedPlayer)
+      const newPlayers = [...playersArray]
       
+      // Remove dragged player from current position
+      newPlayers[draggedIndex] = null
+      
+      // Place dragged player in target position (and shift target if occupied)
+      if (newPlayers[targetIndex] !== null) {
+        // If target position is occupied, swap
+        newPlayers[draggedIndex] = newPlayers[targetIndex]
+      }
+      newPlayers[targetIndex] = draggedMember
+      
+      // Store the full 7-position array to preserve vacant spots
       await updateTeam(teamId, { players: newPlayers })
     } catch (error) {
       console.error('Failed to reorder team members:', error)
@@ -646,7 +673,7 @@ const DojoManagement: React.FC = () => {
                 {showTeamSwitchSuggestions && teamSuggestions.length > 0 && (
                   <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
                     {teamSuggestions.map((team) => {
-                      const memberCount = team.players?.length || 0
+                      const memberCount = team.players?.filter((p: any) => p !== null).length || 0
                       const isFull = memberCount >= 7
                       
                       return (
@@ -711,56 +738,57 @@ const DojoManagement: React.FC = () => {
                       {team.name}
                     </h4>
                     <p className="text-body-small text-gray-500">
-                      {team.players?.length || 0} members
+                      {team.players?.filter((p: any) => p !== null).length || 0} members
                     </p>
                   </div>
                 </div>
 
-                {/* Team Members */}
-                {team.players && team.players.length > 0 && (
-                  <div className="mb-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <h5 className="text-body-small font-medium text-gray-700">Members</h5>
-                      {team.players.length > 1 && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setReorderingMembers(reorderingMembers === team.id ? null : team.id)
-                          }}
-                          className={`text-xs px-2 py-1 rounded ${reorderingMembers === team.id ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                        >
-                          <GripVertical className="w-3 h-3 inline mr-1" />
-                          {reorderingMembers === team.id ? 'Done' : 'Reorder'}
-                        </button>
-                      )}
-                    </div>
-                    <div className="space-y-1 max-h-32 overflow-y-auto">
-                      {team.players.map((member: any, memberIndex: number) => (
+                {/* Team Members - Show all 7 positions */}
+                <div className="mb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <h5 className="text-body-small font-medium text-gray-700">Team Lineup (7 positions)</h5>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setReorderingMembers(reorderingMembers === team.id ? null : team.id)
+                      }}
+                      className={`text-xs px-2 py-1 rounded ${reorderingMembers === team.id ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                    >
+                      <GripVertical className="w-3 h-3 inline mr-1" />
+                      {reorderingMembers === team.id ? 'Done' : 'Reorder'}
+                    </button>
+                  </div>
+                  <div className="space-y-1 max-h-40 overflow-y-auto">
+                    {Array.from({ length: 7 }, (_, positionIndex) => {
+                      const member = team.players?.[positionIndex]
+                      return (
                         <div 
-                          key={member.id} 
+                          key={member?.id || `empty-${positionIndex}`}
                           className={`flex items-center justify-between text-body-small p-2 rounded ${
                             reorderingMembers === team.id 
                               ? 'cursor-move border border-gray-200 hover:border-primary-300' 
-                              : ''
+                              : 'border border-gray-100'
                           } ${
-                            draggedMember?.id === member.id ? 'opacity-50' : ''
+                            draggedMember?.id === member?.id ? 'opacity-50' : ''
+                          } ${
+                            !member ? 'bg-gray-50 border-dashed' : 'bg-white'
                           }`}
-                          draggable={reorderingMembers === team.id}
-                          onDragStart={(e) => handleMemberDragStart(e, member)}
+                          draggable={reorderingMembers === team.id && member}
+                          onDragStart={(e) => member && handleMemberDragStart(e, member)}
                           onDragOver={handleMemberDragOver}
-                          onDrop={(e) => handleMemberDrop(e, member, team.id)}
+                          onDrop={(e) => handleMemberDrop(e, member, team.id, positionIndex)}
                           onDragEnd={handleMemberDragEnd}
                         >
                           <div className="flex items-center flex-1">
-                            {reorderingMembers === team.id && (
+                            {reorderingMembers === team.id && member && (
                               <div className="flex flex-col mr-2">
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     handleMoveMember(team.id, member.id, 'up')
                                   }}
-                                  disabled={memberIndex === 0}
-                                  className={`p-0.5 rounded hover:bg-gray-100 ${memberIndex === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600'}`}
+                                  disabled={positionIndex === 0}
+                                  className={`p-0.5 rounded hover:bg-gray-100 ${positionIndex === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600'}`}
                                   title="Move up"
                                 >
                                   <ChevronUp className="w-3 h-3" />
@@ -770,29 +798,29 @@ const DojoManagement: React.FC = () => {
                                     e.stopPropagation()
                                     handleMoveMember(team.id, member.id, 'down')
                                   }}
-                                  disabled={memberIndex === team.players.length - 1}
-                                  className={`p-0.5 rounded hover:bg-gray-100 ${memberIndex === team.players.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600'}`}
+                                  disabled={positionIndex === 6}
+                                  className={`p-0.5 rounded hover:bg-gray-100 ${positionIndex === 6 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600'}`}
                                   title="Move down"
                                 >
                                   <ChevronDown className="w-3 h-3" />
                                 </button>
                               </div>
                             )}
-                            {reorderingMembers === team.id && (
-                              <span className="text-xs font-medium text-primary-600 mr-2 min-w-[20px]">
-                                #{memberIndex + 1}
-                              </span>
-                            )}
-                            <span className="text-gray-900 truncate">{member.fullName}</span>
+                            <span className="text-xs font-medium text-primary-600 mr-2 min-w-[20px]">
+                              #{positionIndex + 1}
+                            </span>
+                            <span className={`truncate ${member ? 'text-gray-900' : 'text-gray-500 italic'}`}>
+                              {member ? member.fullName : 'Open Position'}
+                            </span>
                           </div>
-                          <div className={getRankBadgeClass(member.kendoRank)}>
-                            {member.kendoRank || 'Mudansha'}
+                          <div className={member ? getRankBadgeClass(member.kendoRank) : 'text-xs px-2 py-1 bg-gray-200 text-gray-500 rounded'}>
+                            {member ? (member.kendoRank || 'Mudansha') : 'Vacant'}
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      )
+                    })}
                   </div>
-                )}
+                </div>
               </div>
             ))}
 
@@ -1218,7 +1246,7 @@ const DojoManagement: React.FC = () => {
                   {showTeamSuggestions && teamSuggestions.length > 0 && (
                     <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
                       {teamSuggestions.map((team) => {
-                        const memberCount = team.players?.length || 0
+                        const memberCount = team.players?.filter((p: any) => p !== null).length || 0
                         const isFull = memberCount >= 7
                         
                         return (
@@ -1248,7 +1276,7 @@ const DojoManagement: React.FC = () => {
                   <div className="mt-2 p-2 bg-green-50 rounded border border-green-200">
                     <div className="text-sm font-medium text-green-800">Selected: {selectedNewTeam.name}</div>
                     <div className="text-xs text-green-600">
-                      {selectedNewTeam.players?.length || 0}/7 members
+                      {selectedNewTeam.players?.filter((p: any) => p !== null).length || 0}/7 members
                     </div>
                   </div>
                 )}
