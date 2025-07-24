@@ -33,7 +33,7 @@ const HomePage: React.FC = () => {
                 <Sword className="w-8 h-8 text-white" />
               </div>
               <h1 className="text-display-medium sm:text-display-large font-bold text-gray-900">
-                Kendo Taikai Manager
+                Goryuki
               </h1>
             </div>
 
