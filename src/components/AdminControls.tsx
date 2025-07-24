@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 import { useTournament } from '../contexts/TournamentContext'
 import { generateSeedGroups, advanceToMainStage } from '../utils/tournamentLogic'
-import { Settings, Play, Trophy, Users, AlertCircle, CheckCircle } from 'lucide-react'
+import { Settings, Play, Trophy, Users, AlertCircle, CheckCircle, RotateCcw, Edit } from 'lucide-react'
 
 /**
  * AdminControls component for tournament management
@@ -9,9 +10,15 @@ import { Settings, Play, Trophy, Users, AlertCircle, CheckCircle } from 'lucide-
  */
 
 const AdminControls: React.FC = () => {
+  const { isSuperAdmin } = useAuth()
   const { tournament, teams, updateTournament } = useTournament()
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const [editingTournament, setEditingTournament] = useState(false)
+  const [tournamentDetails, setTournamentDetails] = useState({
+    name: tournament?.name || '',
+    description: tournament?.description || ''
+  })
 
   const handleGenerateSeedGroups = async () => {
     if (!tournament) return
@@ -82,6 +89,94 @@ const AdminControls: React.FC = () => {
       setMessage({
         type: 'error',
         text: error instanceof Error ? error.message : 'Failed to advance to main stage'
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleResetTournament = async () => {
+    if (!tournament || !isSuperAdmin()) return
+
+    const confirmed = window.confirm(
+      'Are you sure you want to reset the tournament to registration status? This will clear all seed groups and bracket data.'
+    )
+
+    if (!confirmed) return
+
+    setLoading(true)
+    setMessage(null)
+
+    try {
+      const updatedTournament = {
+        ...tournament,
+        status: 'registration' as const,
+        seedGroups: [],
+        mainBracket: {
+          id: 'main_bracket',
+          type: 'double_elimination' as const,
+          rounds: []
+        },
+        updatedAt: new Date().toISOString()
+      }
+
+      // Save to localStorage
+      const tournaments = JSON.parse(localStorage.getItem('tournaments') || '[]')
+      const updatedTournaments = tournaments.map((t: any) =>
+        t.id === tournament.id ? updatedTournament : t
+      )
+      localStorage.setItem('tournaments', JSON.stringify(updatedTournaments))
+
+      // Update context
+      updateTournament(updatedTournament)
+
+      setMessage({
+        type: 'success',
+        text: 'Tournament has been reset to registration status'
+      })
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Failed to reset tournament'
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleUpdateTournamentDetails = async () => {
+    if (!tournament || !isSuperAdmin()) return
+
+    setLoading(true)
+    setMessage(null)
+
+    try {
+      const updatedTournament = {
+        ...tournament,
+        name: tournamentDetails.name.trim(),
+        description: tournamentDetails.description.trim(),
+        updatedAt: new Date().toISOString()
+      }
+
+      // Save to localStorage
+      const tournaments = JSON.parse(localStorage.getItem('tournaments') || '[]')
+      const updatedTournaments = tournaments.map((t: any) =>
+        t.id === tournament.id ? updatedTournament : t
+      )
+      localStorage.setItem('tournaments', JSON.stringify(updatedTournaments))
+
+      // Update context
+      updateTournament(updatedTournament)
+
+      setEditingTournament(false)
+      setMessage({
+        type: 'success',
+        text: 'Tournament details updated successfully'
+      })
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Failed to update tournament details'
       })
     } finally {
       setLoading(false)
@@ -222,7 +317,130 @@ const AdminControls: React.FC = () => {
             )}
           </button>
         </div>
+
+        {/* Super Admin Controls */}
+        {isSuperAdmin() && (
+          <>
+            {/* Tournament Details Editing */}
+            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+              <div className="flex items-center">
+                <Edit className="w-5 h-5 text-gray-500 mr-3" />
+                <div>
+                  <h3 className="text-title-medium font-medium text-gray-900">
+                    Edit Tournament Details
+                  </h3>
+                  <p className="text-body-small text-gray-600">
+                    Modify tournament name and description
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditingTournament(true)}
+                disabled={loading}
+                className="btn-outlined"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Edit Details
+              </button>
+            </div>
+
+            {/* Reset Tournament */}
+            <div className="flex items-center justify-between p-4 border border-red-200 rounded-lg bg-red-50">
+              <div className="flex items-center">
+                <RotateCcw className="w-5 h-5 text-red-500 mr-3" />
+                <div>
+                  <h3 className="text-title-medium font-medium text-red-900">
+                    Reset Tournament
+                  </h3>
+                  <p className="text-body-small text-red-700">
+                    Reset tournament back to registration status
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleResetTournament}
+                disabled={!tournament || loading}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-body-medium font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Resetting...
+                  </div>
+                ) : (
+                  <>
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Reset Tournament
+                  </>
+                )}
+              </button>
+            </div>
+          </>
+        )}
       </div>
+
+      {/* Tournament Details Edit Modal */}
+      {editingTournament && isSuperAdmin() && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-title-large font-semibold text-gray-900 mb-4">
+              Edit Tournament Details
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-body-medium font-medium text-gray-700 mb-2">
+                  Tournament Name
+                </label>
+                <input
+                  type="text"
+                  value={tournamentDetails.name}
+                  onChange={(e) => setTournamentDetails(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Enter tournament name"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-body-medium font-medium text-gray-700 mb-2">
+                  Description (Optional)
+                </label>
+                <textarea
+                  value={tournamentDetails.description}
+                  onChange={(e) => setTournamentDetails(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Enter tournament description"
+                  rows={3}
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => setEditingTournament(false)}
+                disabled={loading}
+                className="btn-outlined"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateTournamentDetails}
+                disabled={loading || !tournamentDetails.name.trim()}
+                className="btn-filled"
+              >
+                {loading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Updating...
+                  </div>
+                ) : (
+                  'Update Details'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Help Text */}
       <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
