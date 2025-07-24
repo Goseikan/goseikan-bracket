@@ -27,3 +27,5 @@ Whenever you process a new prompt, always follow the below code patterns only if
 # Project Specific
 
 1. Ensure all changes apply to both web and print versions.
+
+<!-- GIT COMMIT: Prepare to push to Github. Don't reference anything about Claude in the commit messages. Selectively add and commit only relevant changes. If changes don't affect the end-user experience on the front-end, treat it as a "chore:" instead of a feat:". Each commit should be clear and focused. Increment the version following Semantic Versioning based on the commits made. -->
