@@ -97,12 +97,16 @@ const BracketVisualization: React.FC<BracketVisualizationProps> = ({
                       <div
                         key={standing.teamId}
                         className={`flex items-center justify-between p-3 rounded-lg ${
-                          index < 2 ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
+                          index === 0 ? 'bg-green-50 border border-green-200' :
+                          index === 1 ? 'bg-yellow-50 border border-yellow-200' :
+                          index === 2 ? 'bg-orange-50 border border-orange-200' : 'bg-gray-50'
                         }`}
                       >
                         <div className="flex items-center">
                           <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mr-3 ${
-                            index < 2 ? 'bg-green-600 text-white' : 'bg-gray-400 text-white'
+                            index === 0 ? 'bg-green-600 text-white' :
+                            index === 1 ? 'bg-yellow-600 text-white' :
+                            index === 2 ? 'bg-orange-600 text-white' : 'bg-gray-400 text-white'
                           }`}>
                             {index + 1}
                           </div>
@@ -183,31 +187,30 @@ const BracketVisualization: React.FC<BracketVisualizationProps> = ({
         <div className="flex items-center mb-4">
           <Users className="w-6 h-6 text-accent-400 mr-3" />
           <h3 className="text-title-large font-semibold text-gray-900">
-            Main Tournament Qualification
+            Main Tournament Seeding
           </h3>
         </div>
         
         <p className="text-body-medium text-gray-600 mb-6">
-          Top 2 teams from each group advance to the main double elimination bracket.
+          All teams advance to the main double elimination bracket with strategic seeding based on their group performance.
         </p>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {groups.map((group) => {
-            const topTeams = group.standings
+            const allTeams = group.standings
               .sort((a, b) => {
                 if (a.points !== b.points) return b.points - a.points
                 if (a.wins !== b.wins) return b.wins - a.wins
                 return a.losses - b.losses
               })
-              .slice(0, 2)
 
             return (
               <div key={group.id} className="bg-gray-50 rounded-lg p-4">
                 <h4 className="text-title-small font-medium text-gray-900 mb-3">
-                  {group.name} Qualifiers
+                  {group.name} Seeding
                 </h4>
                 <div className="space-y-2">
-                  {topTeams.map((standing, index) => {
+                  {allTeams.map((standing, index) => {
                     const team = getTeamById(standing.teamId)
                     if (!team) return null
 
@@ -217,7 +220,11 @@ const BracketVisualization: React.FC<BracketVisualizationProps> = ({
                         className="flex items-center justify-between bg-white rounded-lg p-2"
                       >
                         <div className="flex items-center">
-                          <div className="w-4 h-4 bg-green-600 rounded-full flex items-center justify-center text-xs font-bold text-white mr-2">
+                          <div className={`w-4 h-4 rounded-full flex items-center justify-center text-xs font-bold text-white mr-2 ${
+                            index === 0 ? 'bg-green-600' :
+                            index === 1 ? 'bg-yellow-600' :
+                            index === 2 ? 'bg-orange-600' : 'bg-gray-400'
+                          }`}>
                             {index + 1}
                           </div>
                           <span className="text-body-small font-medium text-gray-900">
