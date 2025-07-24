@@ -207,42 +207,74 @@ export const isGroupComplete = (group: Group): boolean => {
 }
 
 /**
- * Get the top teams from each group for main bracket
+ * Get all teams from groups with their seed rankings for main bracket
+ * All teams advance, but with rankings based on their seed performance
  */
-export const getTopTeamsFromGroups = (groups: Group[], teamsPerGroup: number = 2): Team[] => {
-  const topTeams: Team[] = []
+export const getAllTeamsFromGroups = (groups: Group[]): Team[] => {
+  const allTeams: Team[] = []
   
-  groups.forEach(group => {
+  groups.forEach((group, groupIndex) => {
     const sortedStandings = calculateRankings(group.standings)
-    const topStandings = sortedStandings.slice(0, teamsPerGroup)
     
-    topStandings.forEach(standing => {
+    sortedStandings.forEach((standing, rankIndex) => {
       const team = group.teams.find(t => t.id === standing.teamId)
       if (team) {
-        // Update team's seed ranking
-        team.seedRanking = standing.ranking
-        topTeams.push(team)
+        // Create a global seed ranking: better performers get better seeds
+        // Group winners get seeds 1, 2, 3... then group runners-up get next seeds, etc.
+        team.seedRanking = (rankIndex * groups.length) + groupIndex + 1
+        team.groupRanking = standing.ranking // Keep track of within-group performance
+        allTeams.push(team)
       }
     })
   })
   
-  return topTeams
+  return allTeams
 }
 
 /**
  * Generate main bracket structure for double elimination
+ * Places stronger seed teams against weaker teams in initial rounds
  */
 export const generateMainBracket = (teams: Team[]) => {
-  // Sort teams by their seed ranking (best from each group first)
+  // Sort teams by their seed ranking (best performers first)
   const sortedTeams = [...teams].sort((a, b) => {
     return (a.seedRanking || 999) - (b.seedRanking || 999)
   })
   
+  // Create strategic pairings: strongest vs weakest
+  const strategicPairings = createStrategicPairings(sortedTeams)
+  
   return {
     id: 'main_bracket',
     type: 'double_elimination' as const,
-    rounds: generateDoubleEliminationRounds(sortedTeams)
+    rounds: generateDoubleEliminationRounds(strategicPairings)
   }
+}
+
+/**
+ * Create strategic pairings where stronger teams face weaker teams
+ * Uses a "snake" seeding pattern: 1 vs n, 2 vs n-1, etc.
+ */
+export const createStrategicPairings = (sortedTeams: Team[]): Team[] => {
+  const numTeams = sortedTeams.length
+  const pairedTeams: Team[] = []
+  
+  // Create pairings using traditional tournament seeding
+  // 1 vs n, 2 vs n-1, 3 vs n-2, etc.
+  const half = Math.ceil(numTeams / 2)
+  
+  for (let i = 0; i < half; i++) {
+    // Add the stronger team first
+    pairedTeams.push(sortedTeams[i])
+    
+    // Add the weaker team (if exists)
+    const weakerTeamIndex = numTeams - 1 - i
+    if (weakerTeamIndex > i) {
+      pairedTeams.push(sortedTeams[weakerTeamIndex])
+    }
+  }
+  
+  return pairedTeams
 }
 
 /**
@@ -289,6 +321,7 @@ export const generateDoubleEliminationRounds = (teams: Team[]) => {
 
 /**
  * Advance tournament from seed stage to main stage
+ * All teams advance with strategic seeding based on seed performance
  */
 export const advanceToMainStage = (tournament: Tournament, groups: Group[]): Tournament => {
   // Check if all groups are complete
@@ -297,10 +330,10 @@ export const advanceToMainStage = (tournament: Tournament, groups: Group[]): Tou
     throw new Error('All seed groups must be complete before advancing to main stage')
   }
   
-  // Get top teams from each group
-  const qualifiedTeams = getTopTeamsFromGroups(groups, 2) // Top 2 from each group
+  // Get all teams with their seed rankings
+  const qualifiedTeams = getAllTeamsFromGroups(groups)
   
-  // Generate main bracket
+  // Generate main bracket with strategic pairings
   const mainBracket = generateMainBracket(qualifiedTeams)
   
   return {

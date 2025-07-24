@@ -360,7 +360,7 @@ const AdminControls: React.FC = () => {
                 Advance to Main Stage
               </h3>
               <p className="text-body-small text-gray-600">
-                Start the double elimination bracket
+                All teams advance with strategic seeding based on performance
               </p>
               {canAdvanceToMain && !allSeedGroupsComplete && (
                 <p className="text-body-small text-amber-600 mt-1">
@@ -649,8 +649,8 @@ const AdminControls: React.FC = () => {
           <li>1. <strong>Registration:</strong> Teams register and join the tournament</li>
           <li>2. <strong>Generate Seed Groups:</strong> Create round-robin groups (prevents same-dojo conflicts)</li>
           <li>3. <strong>Seed Stage:</strong> Teams compete in their groups to determine rankings</li>
-          <li>4. <strong>Advance to Main:</strong> Top teams from each group enter double elimination</li>
-          <li>5. <strong>Main Stage:</strong> Double elimination bracket determines final rankings</li>
+          <li>4. <strong>Advance to Main:</strong> All teams enter double elimination with strategic seeding</li>
+          <li>5. <strong>Main Stage:</strong> Double elimination bracket with stronger teams facing weaker teams</li>
         </ol>
       </div>
     </div>

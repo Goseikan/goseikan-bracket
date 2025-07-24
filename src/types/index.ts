@@ -47,6 +47,7 @@ export interface Team {
   logo?: string // Base64 encoded image or URL
   players: User[]
   seedRanking?: number
+  groupRanking?: number // Ranking within seed group (1st, 2nd, 3rd in group)
   finalRanking?: number
   createdAt: string
   updatedAt: string
