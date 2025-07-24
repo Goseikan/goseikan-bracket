@@ -22,7 +22,7 @@ export interface User {
   dojoName?: string
   teamId?: string
   teamName?: string
-  role: 'participant' | 'admin'
+  role: 'participant' | 'admin' | 'super_admin'
   email: string
   password: string // hashed
   kendoRank: KendoRank
@@ -181,7 +181,7 @@ export interface AuthUser {
   id: string
   fullName: string
   email: string
-  role: 'participant' | 'admin'
+  role: 'participant' | 'admin' | 'super_admin'
   dojoId: string
   teamId: string
   teamName?: string
@@ -265,4 +265,5 @@ export interface NavigationItem {
   icon?: string
   requiresAuth?: boolean
   requiresAdmin?: boolean
+  requiresSuperAdmin?: boolean
 }

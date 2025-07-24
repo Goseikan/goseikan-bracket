@@ -30,6 +30,9 @@ interface AuthContextType extends AuthState {
   logout: () => void
   updateUserProfile: (updates: Partial<AuthUser>) => void
   clearError: () => void
+  isAdmin: () => boolean
+  isSuperAdmin: () => boolean
+  hasAdminPrivileges: () => boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -276,13 +279,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
+  /**
+   * Check if current user is an admin (not super admin)
+   */
+  const isAdmin = (): boolean => {
+    return state.user?.role === 'admin'
+  }
+
+  /**
+   * Check if current user is a super admin
+   */
+  const isSuperAdmin = (): boolean => {
+    return state.user?.role === 'super_admin'
+  }
+
+  /**
+   * Check if current user has admin privileges (admin or super admin)
+   */
+  const hasAdminPrivileges = (): boolean => {
+    return state.user?.role === 'admin' || state.user?.role === 'super_admin'
+  }
+
   const value: AuthContextType = {
     ...state,
     login,
     register,
     logout,
     updateUserProfile,
-    clearError
+    clearError,
+    isAdmin,
+    isSuperAdmin,
+    hasAdminPrivileges
   }
 
   return (
