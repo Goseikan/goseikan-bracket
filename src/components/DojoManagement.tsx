@@ -257,11 +257,9 @@ const DojoManagement: React.FC = () => {
       setError('')
       
       // Update user's dojo and team
-      await updateUser(user.id, { 
+      await updateUser(user!.id, { 
         dojoId: selectedNewDojo.id,
-        teamId: selectedNewTeam.id,
-        teamName: selectedNewTeam.name,
-        dojoName: selectedNewDojo.name
+        teamId: selectedNewTeam.id
       })
       
       // Update auth context
@@ -315,9 +313,8 @@ const DojoManagement: React.FC = () => {
       setError('')
       
       // Update user's team (should be within same dojo)
-      await updateUser(user.id, { 
-        teamId: team.id,
-        teamName: team.name
+      await updateUser(user!.id, { 
+        teamId: team.id
       })
       
       // Update auth context
@@ -455,7 +452,7 @@ const DojoManagement: React.FC = () => {
   // Handle creating a new dojo
   const handleCreateDojo = async () => {
     // Check admin permission
-    if (user.role !== 'admin') {
+    if (user?.role !== 'admin') {
       setError('Only administrators can create new dojos')
       return
     }
@@ -485,7 +482,7 @@ const DojoManagement: React.FC = () => {
   // Handle creating a new team
   const handleCreateTeam = async () => {
     // Check admin permission
-    if (user.role !== 'admin') {
+    if (user?.role !== 'admin') {
       setError('Only administrators can create new teams')
       return
     }
@@ -738,7 +735,7 @@ const DojoManagement: React.FC = () => {
                       )}
                     </div>
                     <div className="space-y-1 max-h-32 overflow-y-auto">
-                      {team.players.map((member, memberIndex) => (
+                      {team.players.map((member: any, memberIndex: number) => (
                         <div 
                           key={member.id} 
                           className={`flex items-center justify-between text-body-small p-2 rounded ${

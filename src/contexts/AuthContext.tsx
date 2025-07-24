@@ -118,6 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: user.role,
           dojoId: user.dojoId,
           teamId: user.teamId,
+          dateOfBirth: user.dateOfBirth,
           kendoRank: user.kendoRank
         }
 
@@ -140,6 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: result.data.role,
           dojoId: result.data.dojoId,
           teamId: result.data.teamId || '',
+          dateOfBirth: result.data.dateOfBirth,
           kendoRank: result.data.kendoRank
         }
 
@@ -232,6 +234,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role: newUser.role,
         dojoId: newUser.dojoId,
         teamId: newUser.teamId,
+        dateOfBirth: newUser.dateOfBirth,
         kendoRank: newUser.kendoRank
       }
 

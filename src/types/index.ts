@@ -184,6 +184,8 @@ export interface AuthUser {
   role: 'participant' | 'admin'
   dojoId: string
   teamId: string
+  teamName?: string
+  dateOfBirth: string
   kendoRank: KendoRank
 }
 

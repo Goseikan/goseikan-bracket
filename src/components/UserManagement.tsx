@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useTournament } from '../contexts/TournamentContext'
 import { useAuth } from '../contexts/AuthContext'
-import { User, Dojo, Team } from '../types'
+import { User, Dojo, Team, KendoRank } from '../types'
 import { getRankBadgeClass, KENDO_RANKS } from '../utils/kendoRanks'
 import { Trash2, Edit3, UserCheck, AlertTriangle, X, Check, Search } from 'lucide-react'
 
@@ -416,7 +416,7 @@ const UserManagement: React.FC = () => {
                 </label>
                 <select
                   value={editForm.kendoRank || ''}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, kendoRank: e.target.value }))}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, kendoRank: e.target.value as KendoRank }))}
                   className="input w-full"
                   required
                 >

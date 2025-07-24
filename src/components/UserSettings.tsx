@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useTournament } from '../contexts/TournamentContext'
 import RankSelector from './RankSelector'
 import { Edit3, Check, X, User, Building, Trophy, AlertTriangle } from 'lucide-react'
+import { KendoRank } from '../types'
 
 /**
  * UserSettings component - Allows users to edit their personal profile information
@@ -17,7 +18,7 @@ const UserSettings: React.FC = () => {
   const [editingRank, setEditingRank] = useState(false)
   const [userNameValue, setUserNameValue] = useState(currentUser?.fullName || '')
   const [dateOfBirthValue, setDateOfBirthValue] = useState(currentUser?.dateOfBirth || '')
-  const [rankValue, setRankValue] = useState(currentUser?.kendoRank || 'Mudansha')
+  const [rankValue, setRankValue] = useState<KendoRank>(currentUser?.kendoRank || 'Mudansha')
   const [saveError, setSaveError] = useState<string | null>(null)
 
   if (!currentUser) {
@@ -117,9 +118,9 @@ const UserSettings: React.FC = () => {
 
     try {
       // Update user in tournament context
-      await updateUser(currentUser.id, { kendoRank: rankValue.trim() })
+      await updateUser(currentUser.id, { kendoRank: rankValue.trim() as KendoRank })
       // Update user in auth context
-      updateUserProfile({ kendoRank: rankValue.trim() })
+      updateUserProfile({ kendoRank: rankValue.trim() as KendoRank })
       setEditingRank(false)
       setSaveError(null)
     } catch (error) {
