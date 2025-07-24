@@ -147,6 +147,8 @@ export const generateWinnersBracket = (teams: Team[]): BracketMatch[] => {
     }
   })
   
+  const firstRoundMatches = pairings.length
+  
   // Handle byes for odd number of teams
   if (numTeams % 2 === 1) {
     const byeTeam = teams[numTeams - 1]

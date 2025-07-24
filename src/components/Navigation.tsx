@@ -9,7 +9,7 @@ import { Menu, X, Trophy, User, Settings, LogOut, Sword, Users } from 'lucide-re
  */
 
 const Navigation: React.FC = () => {
-  const { user, logout } = useAuth()
+  const { user, logout, hasAdminPrivileges } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -52,7 +52,7 @@ const Navigation: React.FC = () => {
       { label: 'Dashboard', path: '/dashboard', icon: User }
     ]
 
-    if (user.role === 'admin') {
+    if (hasAdminPrivileges()) {
       authenticatedItems.push({ label: 'Admin', path: '/admin', icon: Settings })
     }
 
