@@ -77,7 +77,7 @@ const DashboardPage: React.FC = () => {
             >
               <div className="flex items-center">
                 <Building className="w-4 h-4 mr-2" />
-                Dojo Management
+                Dojo & Team Management
               </div>
             </button>
             <button

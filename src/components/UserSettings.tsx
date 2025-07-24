@@ -1,22 +1,23 @@
 import React, { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTournament } from '../contexts/TournamentContext'
+import RankSelector from './RankSelector'
 import { Edit3, Check, X, User, Building, Trophy, AlertTriangle } from 'lucide-react'
 
 /**
- * UserSettings component - Allows users to edit their own profile and associated dojo/team names
- * Also allows editing of their own name
+ * UserSettings component - Allows users to edit their personal profile information
+ * Includes editing of name, date of birth, and kendo rank
  */
 
 const UserSettings: React.FC = () => {
   const { user: currentUser, updateUserProfile } = useAuth()
-  const { dojos, teams, updateDojo, updateTeam, updateUser } = useTournament()
+  const { dojos, teams, updateUser } = useTournament()
   const [editingUserName, setEditingUserName] = useState(false)
-  const [editingDojoName, setEditingDojoName] = useState(false)
-  const [editingTeamName, setEditingTeamName] = useState(false)
+  const [editingDateOfBirth, setEditingDateOfBirth] = useState(false)
+  const [editingRank, setEditingRank] = useState(false)
   const [userNameValue, setUserNameValue] = useState(currentUser?.fullName || '')
-  const [dojoNameValue, setDojoNameValue] = useState('')
-  const [teamNameValue, setTeamNameValue] = useState('')
+  const [dateOfBirthValue, setDateOfBirthValue] = useState(currentUser?.dateOfBirth || '')
+  const [rankValue, setRankValue] = useState(currentUser?.kendoRank || 'Mudansha')
   const [saveError, setSaveError] = useState<string | null>(null)
 
   if (!currentUser) {
@@ -69,61 +70,67 @@ const UserSettings: React.FC = () => {
     setSaveError(null)
   }
 
-  // Handle dojo name editing
-  const handleStartDojoNameEdit = () => {
-    setEditingDojoName(true)
-    setDojoNameValue(userDojo?.name || '')
+  // Handle date of birth editing
+  const handleStartDateOfBirthEdit = () => {
+    setEditingDateOfBirth(true)
+    setDateOfBirthValue(currentUser.dateOfBirth || '')
     setSaveError(null)
   }
 
-  const handleSaveDojoName = async () => {
-    if (!userDojo || !dojoNameValue.trim()) {
-      setSaveError('Dojo name cannot be empty')
+  const handleSaveDateOfBirth = async () => {
+    if (!dateOfBirthValue.trim()) {
+      setSaveError('Date of birth cannot be empty')
       return
     }
 
     try {
-      await updateDojo(userDojo.id, { name: dojoNameValue.trim() })
-      setEditingDojoName(false)
+      // Update user in tournament context
+      await updateUser(currentUser.id, { dateOfBirth: dateOfBirthValue.trim() })
+      // Update user in auth context
+      updateUserProfile({ dateOfBirth: dateOfBirthValue.trim() })
+      setEditingDateOfBirth(false)
       setSaveError(null)
     } catch (error) {
-      console.error('Failed to update dojo name:', error)
-      setSaveError('Failed to save dojo name. Please try again.')
+      console.error('Failed to update date of birth:', error)
+      setSaveError('Failed to save date of birth. Please try again.')
     }
   }
 
-  const handleCancelDojoName = () => {
-    setEditingDojoName(false)
-    setDojoNameValue(userDojo?.name || '')
+  const handleCancelDateOfBirth = () => {
+    setEditingDateOfBirth(false)
+    setDateOfBirthValue(currentUser.dateOfBirth || '')
     setSaveError(null)
   }
 
-  // Handle team name editing
-  const handleStartTeamNameEdit = () => {
-    setEditingTeamName(true)
-    setTeamNameValue(userTeam?.name || '')
+  // Handle rank editing
+  const handleStartRankEdit = () => {
+    setEditingRank(true)
+    setRankValue(currentUser.kendoRank || 'Mudansha')
     setSaveError(null)
   }
 
-  const handleSaveTeamName = async () => {
-    if (!userTeam || !teamNameValue.trim()) {
-      setSaveError('Team name cannot be empty')
+  const handleSaveRank = async () => {
+    if (!rankValue.trim()) {
+      setSaveError('Rank cannot be empty')
       return
     }
 
     try {
-      await updateTeam(userTeam.id, { name: teamNameValue.trim() })
-      setEditingTeamName(false)
+      // Update user in tournament context
+      await updateUser(currentUser.id, { kendoRank: rankValue.trim() })
+      // Update user in auth context
+      updateUserProfile({ kendoRank: rankValue.trim() })
+      setEditingRank(false)
       setSaveError(null)
     } catch (error) {
-      console.error('Failed to update team name:', error)
-      setSaveError('Failed to save team name. Please try again.')
+      console.error('Failed to update rank:', error)
+      setSaveError('Failed to save rank. Please try again.')
     }
   }
 
-  const handleCancelTeamName = () => {
-    setEditingTeamName(false)
-    setTeamNameValue(userTeam?.name || '')
+  const handleCancelRank = () => {
+    setEditingRank(false)
+    setRankValue(currentUser.kendoRank || 'Mudansha')
     setSaveError(null)
   }
 
@@ -133,7 +140,7 @@ const UserSettings: React.FC = () => {
       <div>
         <h2 className="text-title-large font-semibold text-gray-900">Profile Settings</h2>
         <p className="text-body-medium text-gray-600 mt-1">
-          Manage your personal information and associated dojo/team names
+          Manage your personal information
         </p>
       </div>
 
@@ -201,116 +208,144 @@ const UserSettings: React.FC = () => {
         </div>
       </div>
 
-      {/* Dojo Name */}
-      {userDojo && (
-        <div className="card p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Building className="w-8 h-8 text-green-600 mr-4" />
-              <div>
-                <h3 className="text-title-medium font-semibold text-gray-900">Your Dojo</h3>
-                <p className="text-body-small text-gray-600">Edit your dojo name (affects all members)</p>
-              </div>
+      {/* Date of Birth */}
+      <div className="card p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <User className="w-8 h-8 text-primary-600 mr-4" />
+            <div>
+              <h3 className="text-title-medium font-semibold text-gray-900">Date of Birth</h3>
+              <p className="text-body-small text-gray-600">Your birthdate for age verification</p>
             </div>
-          </div>
-          
-          <div className="mt-4">
-            {editingDojoName ? (
-              <div className="flex items-center space-x-3">
-                <input
-                  type="text"
-                  value={dojoNameValue}
-                  onChange={(e) => setDojoNameValue(e.target.value)}
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-body-medium"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSaveDojoName()
-                    if (e.key === 'Escape') handleCancelDojoName()
-                  }}
-                  autoFocus
-                />
-                <button
-                  onClick={handleSaveDojoName}
-                  className="text-green-600 hover:text-green-700 p-2 rounded"
-                  title="Save"
-                >
-                  <Check className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={handleCancelDojoName}
-                  className="text-gray-600 hover:text-gray-700 p-2 rounded"
-                  title="Cancel"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between">
-                <span className="text-body-large text-gray-900">{userDojo.name}</span>
-                <button
-                  onClick={handleStartDojoNameEdit}
-                  className="text-primary-600 hover:text-primary-700 p-2 rounded"
-                  title="Edit Dojo Name"
-                >
-                  <Edit3 className="w-5 h-5" />
-                </button>
-              </div>
-            )}
           </div>
         </div>
-      )}
+        
+        <div className="mt-4">
+          {editingDateOfBirth ? (
+            <div className="flex items-center space-x-3">
+              <input
+                type="date"
+                value={dateOfBirthValue}
+                onChange={(e) => setDateOfBirthValue(e.target.value)}
+                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-body-medium"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveDateOfBirth()
+                  if (e.key === 'Escape') handleCancelDateOfBirth()
+                }}
+                autoFocus
+              />
+              <button
+                onClick={handleSaveDateOfBirth}
+                className="text-green-600 hover:text-green-700 p-2 rounded"
+                title="Save"
+              >
+                <Check className="w-5 h-5" />
+              </button>
+              <button
+                onClick={handleCancelDateOfBirth}
+                className="text-gray-600 hover:text-gray-700 p-2 rounded"
+                title="Cancel"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <span className="text-body-large text-gray-900">
+                {currentUser.dateOfBirth ? new Date(currentUser.dateOfBirth).toLocaleDateString() : 'Not set'}
+              </span>
+              <button
+                onClick={handleStartDateOfBirthEdit}
+                className="text-primary-600 hover:text-primary-700 p-2 rounded"
+                title="Edit Date of Birth"
+              >
+                <Edit3 className="w-5 h-5" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
 
-      {/* Team Name */}
-      {userTeam && (
-        <div className="card p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Trophy className="w-8 h-8 text-accent-600 mr-4" />
-              <div>
-                <h3 className="text-title-medium font-semibold text-gray-900">Your Team</h3>
-                <p className="text-body-small text-gray-600">Edit your team name (affects all team members)</p>
-              </div>
+      {/* Kendo Rank */}
+      <div className="card p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Trophy className="w-8 h-8 text-accent-600 mr-4" />
+            <div>
+              <h3 className="text-title-medium font-semibold text-gray-900">Kendo Rank</h3>
+              <p className="text-body-small text-gray-600">Your current kendo rank</p>
             </div>
           </div>
-          
-          <div className="mt-4">
-            {editingTeamName ? (
+        </div>
+        
+        <div className="mt-4">
+          {editingRank ? (
+            <div className="space-y-3">
+              <RankSelector
+                value={rankValue}
+                onChange={setRankValue}
+                required
+              />
               <div className="flex items-center space-x-3">
-                <input
-                  type="text"
-                  value={teamNameValue}
-                  onChange={(e) => setTeamNameValue(e.target.value)}
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-body-medium"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSaveTeamName()
-                    if (e.key === 'Escape') handleCancelTeamName()
-                  }}
-                  autoFocus
-                />
                 <button
-                  onClick={handleSaveTeamName}
+                  onClick={handleSaveRank}
                   className="text-green-600 hover:text-green-700 p-2 rounded"
                   title="Save"
                 >
                   <Check className="w-5 h-5" />
                 </button>
                 <button
-                  onClick={handleCancelTeamName}
+                  onClick={handleCancelRank}
                   className="text-gray-600 hover:text-gray-700 p-2 rounded"
                   title="Cancel"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
-            ) : (
-              <div className="flex items-center justify-between">
-                <span className="text-body-large text-gray-900">{userTeam.name}</span>
-                <button
-                  onClick={handleStartTeamNameEdit}
-                  className="text-primary-600 hover:text-primary-700 p-2 rounded"
-                  title="Edit Team Name"
-                >
-                  <Edit3 className="w-5 h-5" />
-                </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <span className="text-body-large text-gray-900">{currentUser.kendoRank || 'Mudansha'}</span>
+              <button
+                onClick={handleStartRankEdit}
+                className="text-primary-600 hover:text-primary-700 p-2 rounded"
+                title="Edit Rank"
+              >
+                <Edit3 className="w-5 h-5" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Current Dojo and Team Info */}
+      {(userDojo || userTeam) && (
+        <div className="card p-6">
+          <div className="flex items-center mb-4">
+            <Building className="w-8 h-8 text-green-600 mr-4" />
+            <div>
+              <h3 className="text-title-medium font-semibold text-gray-900">Dojo & Team</h3>
+              <p className="text-body-small text-gray-600">Your current dojo and team assignments</p>
+            </div>
+          </div>
+          
+          <div className="space-y-3">
+            {userDojo && (
+              <div>
+                <span className="text-body-medium font-medium text-gray-700">Dojo:</span>
+                <p className="text-body-large text-gray-900">{userDojo.name}</p>
+                {userDojo.location && (
+                  <p className="text-body-small text-gray-500">{userDojo.location}</p>
+                )}
+              </div>
+            )}
+            {userTeam && (
+              <div>
+                <span className="text-body-medium font-medium text-gray-700">Team:</span>
+                <p className="text-body-large text-gray-900">{userTeam.name}</p>
+                <p className="text-body-small text-gray-500">
+                  {userTeam.players?.length || 0}/7 members
+                </p>
               </div>
             )}
           </div>
@@ -320,13 +355,13 @@ const UserSettings: React.FC = () => {
       {/* Information Card */}
       <div className="card p-6 bg-blue-50 border-blue-200">
         <h3 className="text-title-medium font-semibold text-blue-900 mb-2">
-          Name Change Impact
+          Profile Information
         </h3>
         <ul className="text-body-small text-blue-800 space-y-1">
-          <li>• Changing your name only affects your personal profile</li>
-          <li>• Changing your dojo name affects all members of your dojo</li>
-          <li>• Changing your team name affects all members of your team</li>
-          <li>• All changes are immediate and visible to other tournament participants</li>
+          <li>• Your personal information is used for tournament registration and identification</li>
+          <li>• Date of birth is required for age verification and tournament categories</li>
+          <li>• Rank information helps with tournament seeding and matchmaking</li>
+          <li>• To change your dojo or team, visit the "Dojo & Team Management" section</li>
         </ul>
       </div>
     </div>
