@@ -8,13 +8,17 @@ import { createEmptyMatchScore } from './kendoMatchLogic'
 
 /**
  * Generate seed groups for round-robin stage
- * Prevents teams from the same dojo being in the same group when possible
+ * Ensures even distribution with max 3 teams per group while avoiding same-dojo conflicts
  */
-export const generateSeedGroups = (teams: Team[], numGroups: number = 4): Group[] => {
+export const generateSeedGroups = (teams: Team[], requestedGroups: number = 4): Group[] => {
+  const maxTeamsPerGroup = 3
+  const minGroupsNeeded = Math.ceil(teams.length / maxTeamsPerGroup)
+  const actualGroupCount = Math.max(requestedGroups, minGroupsNeeded)
+  
   const groups: Group[] = []
   
   // Initialize empty groups
-  for (let i = 0; i < numGroups; i++) {
+  for (let i = 0; i < actualGroupCount; i++) {
     groups.push({
       id: `group_${i + 1}`,
       name: `Group ${String.fromCharCode(65 + i)}`, // A, B, C, D, etc.
@@ -33,33 +37,57 @@ export const generateSeedGroups = (teams: Team[], numGroups: number = 4): Group[
     teamsByDojo.get(team.dojoId)!.push(team)
   })
   
-  // Distribute teams across groups, avoiding same-dojo conflicts
-  const dojoIds = Array.from(teamsByDojo.keys())
+  // Create a queue of all teams, sorted by dojo size (larger dojos first)
+  const dojoEntries = Array.from(teamsByDojo.entries())
+    .sort(([, teamsA], [, teamsB]) => teamsB.length - teamsA.length)
+  
+  const teamQueue: Team[] = []
+  dojoEntries.forEach(([, dojoTeams]) => {
+    teamQueue.push(...dojoTeams)
+  })
+  
+  // Distribute teams using round-robin with group size balancing
   let currentGroupIndex = 0
   
-  // First pass: distribute one team from each dojo
-  dojoIds.forEach(dojoId => {
-    const dojoTeams = teamsByDojo.get(dojoId)!
-    if (dojoTeams.length > 0) {
-      const team = dojoTeams.shift()!
-      groups[currentGroupIndex].teams.push(team)
-      currentGroupIndex = (currentGroupIndex + 1) % numGroups
+  for (const team of teamQueue) {
+    // Find the best group that:
+    // 1. Has room (less than maxTeamsPerGroup)
+    // 2. Has the fewest teams from this dojo
+    // 3. Has the fewest total teams (for balance)
+    
+    const availableGroups = groups.filter(group => group.teams.length < maxTeamsPerGroup)
+    
+    if (availableGroups.length === 0) {
+      // If all groups are full, create a new group
+      const newGroup = {
+        id: `group_${groups.length + 1}`,
+        name: `Group ${String.fromCharCode(65 + groups.length)}`,
+        teams: [team],
+        matches: [],
+        standings: []
+      }
+      groups.push(newGroup)
+      continue
     }
-  })
-  
-  // Second pass: distribute remaining teams
-  dojoIds.forEach(dojoId => {
-    const remainingTeams = teamsByDojo.get(dojoId)!
-    remainingTeams.forEach(team => {
-      // Find group with fewest teams from this dojo
-      const bestGroup = groups.reduce((best, current) => {
-        const bestDojoCount = best.teams.filter(t => t.dojoId === dojoId).length
-        const currentDojoCount = current.teams.filter(t => t.dojoId === dojoId).length
-        return currentDojoCount < bestDojoCount ? current : best
-      })
-      bestGroup.teams.push(team)
+    
+    // Find the best available group
+    const bestGroup = availableGroups.reduce((best, current) => {
+      const bestDojoCount = best.teams.filter(t => t.dojoId === team.dojoId).length
+      const currentDojoCount = current.teams.filter(t => t.dojoId === team.dojoId).length
+      
+      // Prioritize groups with fewer teams from the same dojo
+      if (currentDojoCount < bestDojoCount) {
+        return current
+      } else if (currentDojoCount > bestDojoCount) {
+        return best
+      }
+      
+      // If dojo count is equal, prefer group with fewer total teams
+      return current.teams.length < best.teams.length ? current : best
     })
-  })
+    
+    bestGroup.teams.push(team)
+  }
   
   // Generate round-robin matches for each group
   groups.forEach(group => {
