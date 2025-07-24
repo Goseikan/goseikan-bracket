@@ -14,13 +14,13 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Redirect if already logged in - only on successful login, not on route changes
-  // useEffect(() => {
-  //   if (user && location.pathname === '/login') {
-  //     const from = (location.state as any)?.from?.pathname || '/dashboard'
-  //     navigate(from, { replace: true })
-  //   }
-  // }, [user, navigate, location.pathname, location.state])
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && location.pathname === '/login') {
+      const from = (location.state as any)?.from?.pathname || '/'
+      navigate(from, { replace: true })
+    }
+  }, [user, navigate, location.pathname, location.state])
 
   // Form state
   const [credentials, setCredentials] = useState<LoginCredentials>({
