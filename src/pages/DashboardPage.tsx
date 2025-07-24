@@ -4,7 +4,6 @@ import { useTournament } from '../contexts/TournamentContext'
 import { sortDojoMembersByRank, getRankBadgeClass } from '../utils/kendoRanks'
 import DojoManagement from '../components/DojoManagement'
 import UserSettings from '../components/UserSettings'
-import { resetSampleDataWithLogos } from '../utils/sampleData'
 import { User, Users, Trophy, MapPin, Building, Settings, RefreshCw } from 'lucide-react'
 
 /**
@@ -298,8 +297,9 @@ const DashboardPage: React.FC = () => {
                       Reset sample data to include logo placeholders for all dojos and teams.
                     </p>
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         if (confirm('This will reset all sample data and reload the page. Continue?')) {
+                          const { resetSampleDataWithLogos } = await import('../utils/sampleData')
                           resetSampleDataWithLogos()
                           window.location.reload()
                         }
