@@ -292,6 +292,21 @@ const generateTeamsForDojo = (dojoData: typeof SAMPLE_DOJOS_DATA[0], dojoId: str
 const generateUsers = (): User[] => {
   const users: User[] = []
   
+  // Add super admin user
+  users.push({
+    id: 'super_admin_1',
+    fullName: 'Super Administrator',
+    email: 'superadmin@tournament.com',
+    password: 'superadmin123', // In real app, this would be hashed
+    dateOfBirth: '1980-01-01',
+    dojoId: 'dojo_goseikan',
+    teamId: 'team_dojo_goseikan_1',
+    role: 'super_admin',
+    kendoRank: '7 Dan',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  })
+
   // Add admin user
   users.push({
     id: 'admin_1',
@@ -299,8 +314,8 @@ const generateUsers = (): User[] => {
     email: 'admin@tournament.com',
     password: 'admin123', // In real app, this would be hashed
     dateOfBirth: '1985-01-01',
-    dojoId: 'dojo_macomb',
-    teamId: 'team_dojo_macomb_1',
+    dojoId: 'dojo_macomb_kendo_dojo',
+    teamId: 'team_dojo_macomb_kendo_dojo_1',
     role: 'admin',
     kendoRank: '6 Dan',
     createdAt: new Date().toISOString(),
@@ -496,7 +511,7 @@ const assignUsersToTeams = (users: User[], teams: Team[]): { users: User[], team
   
   // Assign each user to the appropriate team
   updatedUsers.forEach(user => {
-    if (user.role === 'admin') return // Skip admin users
+    if (user.role === 'admin' || user.role === 'super_admin') return // Skip admin users
     
     // Find the first team for this user's dojo that has space (max 7 members)
     let userTeam = updatedTeams.find(team => {

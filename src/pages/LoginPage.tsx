@@ -110,10 +110,44 @@ const LoginPage: React.FC = () => {
 
             {/* Demo Credentials */}
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h3 className="text-label-large font-medium text-blue-900 mb-2">Demo Credentials</h3>
-              <div className="space-y-1 text-body-small text-blue-800">
-                <p><strong>Admin:</strong> admin@tournament.com / admin123</p>
-                <p><strong>User:</strong> joshua.rhodes@bnkc.com / password123</p>
+              <h3 className="text-label-large font-medium text-blue-900 mb-3">Demo Accounts</h3>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setCredentials({ email: 'superadmin@tournament.com', password: 'superadmin123' })}
+                  className="w-full text-left p-2 bg-white border border-amber-200 rounded hover:bg-amber-50 transition-colors"
+                >
+                  <div className="text-body-small font-medium text-amber-900 flex items-center">
+                    <span className="mr-1">👑</span>
+                    Super Admin
+                  </div>
+                  <div className="text-body-small text-amber-700">superadmin@tournament.com</div>
+                  <div className="text-xs text-amber-600 mt-1">Full tournament management access</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCredentials({ email: 'admin@tournament.com', password: 'admin123' })}
+                  className="w-full text-left p-2 bg-white border border-blue-200 rounded hover:bg-blue-50 transition-colors"
+                >
+                  <div className="text-body-small font-medium text-blue-900 flex items-center">
+                    <span className="mr-1">⚙️</span>
+                    Admin
+                  </div>
+                  <div className="text-body-small text-blue-700">admin@tournament.com</div>
+                  <div className="text-xs text-blue-600 mt-1">Tournament administration access</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCredentials({ email: 'joe.lee@gsk.com', password: 'password123' })}
+                  className="w-full text-left p-2 bg-white border border-blue-200 rounded hover:bg-blue-50 transition-colors"
+                >
+                  <div className="text-body-small font-medium text-blue-900 flex items-center">
+                    <span className="mr-1">🥋</span>
+                    Participant
+                  </div>
+                  <div className="text-body-small text-blue-700">joe.lee@gsk.com</div>
+                  <div className="text-xs text-blue-600 mt-1">Tournament participant access</div>
+                </button>
               </div>
             </div>
 
