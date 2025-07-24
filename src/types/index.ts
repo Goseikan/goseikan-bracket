@@ -151,7 +151,7 @@ export interface CurrentBattle {
 
 export interface ScoringAction {
   id: string
-  type: 'men' | 'kote' | 'tsuki' | 'do' | 'hansoku'
+  type: 'men' | 'kote' | 'tsuki' | 'do' | 'hansoku' | 'hansoku_point'
   playerId: string
   timestamp: string
   confirmed: boolean
