@@ -3,7 +3,7 @@ import { useTournament } from '../contexts/TournamentContext'
 import { Team } from '../types'
 import LogoUpload from './LogoUpload'
 import { getRankBadgeClass } from '../utils/kendoRanks'
-import { Trophy, Trash2, Edit3, AlertTriangle, X, Users, Building, Check, Search } from 'lucide-react'
+import { Trophy, Trash2, Edit3, AlertTriangle, X, Users, Building, Check, Search, ChevronUp, ChevronDown, GripVertical } from 'lucide-react'
 
 /**
  * TeamManagement component - Admin interface for managing teams
@@ -17,6 +17,8 @@ const TeamManagement: React.FC = () => {
   const [deletingTeam, setDeletingTeam] = useState<Team | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [editForm, setEditForm] = useState<Partial<Team>>({})
+  const [reorderingMembers, setReorderingMembers] = useState<string | null>(null)
+  const [draggedMember, setDraggedMember] = useState<any | null>(null)
 
   // Filter teams based on search query
   const filteredTeams = teams.filter(team => 
@@ -76,6 +78,74 @@ const TeamManagement: React.FC = () => {
     setEditForm({})
   }
 
+  // Handle member reordering
+  const handleMoveMember = async (teamId: string, memberId: string, direction: 'up' | 'down') => {
+    const team = teams.find(t => t.id === teamId)
+    if (!team || !team.players) return
+
+    const currentIndex = team.players.findIndex((p: any) => p.id === memberId)
+    if (currentIndex === -1) return
+    
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
+    if (newIndex < 0 || newIndex >= team.players.length) return
+    
+    try {
+      // Create new players array with swapped positions
+      const newPlayers = [...team.players]
+      const temp = newPlayers[currentIndex]
+      newPlayers[currentIndex] = newPlayers[newIndex]
+      newPlayers[newIndex] = temp
+      
+      await updateTeam(teamId, { players: newPlayers })
+    } catch (error) {
+      console.error('Failed to reorder team members:', error)
+    }
+  }
+
+  // Handle drag and drop for members
+  const handleMemberDragStart = (e: React.DragEvent, member: any) => {
+    setDraggedMember(member)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleMemberDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleMemberDrop = async (e: React.DragEvent, targetMember: any, teamId: string) => {
+    e.preventDefault()
+    if (!draggedMember || draggedMember.id === targetMember.id) {
+      setDraggedMember(null)
+      return
+    }
+
+    try {
+      const team = teams.find(t => t.id === teamId)
+      if (!team || !team.players) return
+
+      const draggedIndex = team.players.findIndex((p: any) => p.id === draggedMember.id)
+      const targetIndex = team.players.findIndex((p: any) => p.id === targetMember.id)
+      
+      if (draggedIndex === -1 || targetIndex === -1) return
+
+      // Create new players array with reordered members
+      const newPlayers = [...team.players]
+      const draggedPlayer = newPlayers.splice(draggedIndex, 1)[0]
+      newPlayers.splice(targetIndex, 0, draggedPlayer)
+      
+      await updateTeam(teamId, { players: newPlayers })
+    } catch (error) {
+      console.error('Failed to reorder team members:', error)
+    } finally {
+      setDraggedMember(null)
+    }
+  }
+
+  const handleMemberDragEnd = () => {
+    setDraggedMember(null)
+  }
+
 
   // Handle logo upload
   const handleLogoUpdate = async (team: Team, logoData: string) => {
@@ -86,6 +156,7 @@ const TeamManagement: React.FC = () => {
       console.error('Failed to update team logo:', error)
     }
   }
+
 
   return (
     <div className="space-y-6">
@@ -188,21 +259,77 @@ const TeamManagement: React.FC = () => {
               {/* Team Members */}
               {members.length > 0 && (
                 <div className="mb-4">
-                  <h4 className="text-body-medium font-medium text-gray-700 mb-2">Team Members</h4>
-                  <div className="space-y-2 max-h-32 overflow-y-auto">
-                    {members.slice(0, 5).map((member) => (
-                      <div key={member.id} className="flex items-center justify-between text-body-small">
-                        <span className="text-gray-900 truncate">{member.fullName}</span>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-body-medium font-medium text-gray-700">Team Members</h4>
+                    {members.length > 1 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setReorderingMembers(reorderingMembers === team.id ? null : team.id)
+                        }}
+                        className={`text-xs px-2 py-1 rounded ${reorderingMembers === team.id ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                      >
+                        <GripVertical className="w-3 h-3 inline mr-1" />
+                        {reorderingMembers === team.id ? 'Done' : 'Reorder'}
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {members.map((member, memberIndex) => (
+                      <div 
+                        key={member.id} 
+                        className={`flex items-center justify-between text-body-small p-2 rounded ${
+                          reorderingMembers === team.id 
+                            ? 'cursor-move border border-gray-200 hover:border-primary-300' 
+                            : ''
+                        } ${
+                          draggedMember?.id === member.id ? 'opacity-50' : ''
+                        }`}
+                        draggable={reorderingMembers === team.id}
+                        onDragStart={(e) => handleMemberDragStart(e, member)}
+                        onDragOver={handleMemberDragOver}
+                        onDrop={(e) => handleMemberDrop(e, member, team.id)}
+                        onDragEnd={handleMemberDragEnd}
+                      >
+                        <div className="flex items-center flex-1">
+                          {reorderingMembers === team.id && (
+                            <div className="flex flex-col mr-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleMoveMember(team.id, member.id, 'up')
+                                }}
+                                disabled={memberIndex === 0}
+                                className={`p-0.5 rounded hover:bg-gray-100 ${memberIndex === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600'}`}
+                                title="Move up"
+                              >
+                                <ChevronUp className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleMoveMember(team.id, member.id, 'down')
+                                }}
+                                disabled={memberIndex === members.length - 1}
+                                className={`p-0.5 rounded hover:bg-gray-100 ${memberIndex === members.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600'}`}
+                                title="Move down"
+                              >
+                                <ChevronDown className="w-3 h-3" />
+                              </button>
+                            </div>
+                          )}
+                          {reorderingMembers === team.id && (
+                            <span className="text-xs font-medium text-primary-600 mr-2 min-w-[20px]">
+                              #{memberIndex + 1}
+                            </span>
+                          )}
+                          <span className="text-gray-900 truncate">{member.fullName}</span>
+                        </div>
                         <div className={getRankBadgeClass(member.kendoRank)}>
                           {member.kendoRank || 'Mudansha'}
                         </div>
                       </div>
                     ))}
-                    {members.length > 5 && (
-                      <div className="text-body-small text-gray-500 text-center">
-                        +{members.length - 5} more members
-                      </div>
-                    )}
                   </div>
                 </div>
               )}
