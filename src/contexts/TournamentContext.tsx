@@ -198,12 +198,25 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         const matches = JSON.parse(localStorage.getItem('matches') || '[]')
         const courts = JSON.parse(localStorage.getItem('courts') || '[]')
         
+        // Enrich teams with fresh player data based on user teamId assignments
+        // This ensures consistency and prevents phantom members from stale data
+        const enrichedTeams = teams.map((team: Team) => ({
+          ...team,
+          players: users.filter((user: User) => user.teamId === team.id)
+        }))
+        
+        // Enrich dojos with enriched team data
+        const enrichedDojos = dojos.map((dojo: Dojo) => ({
+          ...dojo,
+          teams: enrichedTeams.filter((team: Team) => team.dojoId === dojo.id)
+        }))
+        
         dispatch({
           type: 'LOAD_SUCCESS',
           payload: {
             tournament: activeTournament,
-            dojos,
-            teams,
+            dojos: enrichedDojos,
+            teams: enrichedTeams,
             users,
             matches,
             courts

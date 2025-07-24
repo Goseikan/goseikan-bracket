@@ -498,10 +498,14 @@ const assignUsersToTeams = (users: User[], teams: Team[]): { users: User[], team
   updatedUsers.forEach(user => {
     if (user.role === 'admin') return // Skip admin users
     
-    // Find the first team for this user's dojo that has space
-    let userTeam = updatedTeams.find(team => 
-      team.dojoId === user.dojoId && team.players.length < 7
-    )
+    // Find the first team for this user's dojo that has space (max 7 members)
+    let userTeam = updatedTeams.find(team => {
+      if (team.dojoId !== user.dojoId) return false
+      
+      // Count users already assigned to this team
+      const assignedUserCount = updatedUsers.filter(u => u.teamId === team.id).length
+      return assignedUserCount < 7
+    })
     
     // If no team has space, create a new team for this dojo
     if (!userTeam) {
@@ -533,9 +537,8 @@ const assignUsersToTeams = (users: User[], teams: Team[]): { users: User[], team
     
     if (userTeam) {
       user.teamId = userTeam.id
-      if (!userTeam.players.some((p: any) => p.id === user.id)) {
-        userTeam.players.push(user)
-      }
+      // Note: team.players array will be populated by TournamentContext 
+      // based on user teamId assignments to ensure consistency
     }
   })
   
@@ -605,4 +608,22 @@ export const resetSampleDataWithLogos = (): void => {
   // Reinitialize with logos
   initializeSampleData()
   console.log('Sample data reset with logos')
+}
+
+/**
+ * Force reset all sample data - useful for debugging
+ * Call this to completely regenerate all data with latest logic
+ */
+export const forceResetSampleData = (): void => {
+  // Clear existing data
+  localStorage.removeItem('users')
+  localStorage.removeItem('dojos')
+  localStorage.removeItem('teams')
+  localStorage.removeItem('courts')
+  localStorage.removeItem('tournaments')
+  localStorage.removeItem('matches')
+  
+  // Reinitialize with latest logic
+  initializeSampleData()
+  console.log('Sample data force reset - all data regenerated with latest logic')
 }
