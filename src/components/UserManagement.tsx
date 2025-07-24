@@ -12,7 +12,7 @@ import { Trash2, Edit3, UserCheck, AlertTriangle, X, Check, Search } from 'lucid
 
 const UserManagement: React.FC = () => {
   const { users, dojos, teams, updateUser, deleteUser } = useTournament()
-  const { user: currentUser } = useAuth()
+  const { user: currentUser, isSuperAdmin } = useAuth()
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [deletingUser, setDeletingUser] = useState<User | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -27,6 +27,28 @@ const UserManagement: React.FC = () => {
   const [showTeamSuggestions, setShowTeamSuggestions] = useState(false)
   const [selectedDojo, setSelectedDojo] = useState<Dojo | null>(null)
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null)
+
+  // Check if user can be edited by current user
+  const canEditUser = (user: User): boolean => {
+    // Super admins can edit anyone
+    if (isSuperAdmin()) return true
+    // Regular admins cannot edit super admins
+    if (user.role === 'super_admin') return false
+    // Can't edit self
+    if (user.id === currentUser?.id) return false
+    return true
+  }
+
+  // Check if user can be deleted by current user
+  const canDeleteUser = (user: User): boolean => {
+    // Super admins can delete anyone (except themselves)
+    if (isSuperAdmin()) return user.id !== currentUser?.id
+    // Regular admins cannot delete super admins
+    if (user.role === 'super_admin') return false
+    // Can't delete self
+    if (user.id === currentUser?.id) return false
+    return true
+  }
 
   // Filter users based on search query
   const filteredUsers = users.filter(user => 
@@ -126,7 +148,19 @@ const UserManagement: React.FC = () => {
   }
 
   // Handle user role change
-  const handleRoleChange = async (user: User, newRole: 'admin' | 'participant') => {
+  const handleRoleChange = async (user: User, newRole: 'admin' | 'participant' | 'super_admin') => {
+    // Only super admins can assign super admin role
+    if (newRole === 'super_admin' && !isSuperAdmin()) {
+      alert('Only super admins can assign super admin role')
+      return
+    }
+
+    // Prevent changing super admin role unless current user is super admin
+    if (user.role === 'super_admin' && !isSuperAdmin()) {
+      alert('Only super admins can modify super admin roles')
+      return
+    }
+
     try {
       await updateUser(user.id, { ...user, role: newRole })
     } catch (error) {
@@ -283,9 +317,9 @@ const UserManagement: React.FC = () => {
                 return (
                   <tr 
                     key={user.id} 
-                    className="hover:bg-gray-50 cursor-pointer" 
-                    onClick={() => handleEditUser(user)}
-                    title="Click to edit user"
+                    className={`${canEditUser(user) ? 'hover:bg-gray-50 cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
+                    onClick={() => canEditUser(user) && handleEditUser(user)}
+                    title={canEditUser(user) ? "Click to edit user" : "User cannot be edited"}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
@@ -314,15 +348,24 @@ const UserManagement: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <select
-                        value={user.role}
-                        onChange={(e) => handleRoleChange(user, e.target.value as 'admin' | 'participant')}
-                        className="text-body-small border border-gray-300 rounded px-2 py-1"
-                        disabled={user.id === currentUser?.id} // Can't change own role
-                      >
-                        <option value="participant">Participant</option>
-                        <option value="admin">Admin</option>
-                      </select>
+                      <div className="flex items-center justify-between">
+                        <select
+                          value={user.role}
+                          onChange={(e) => handleRoleChange(user, e.target.value as 'admin' | 'participant' | 'super_admin')}
+                          className="text-body-small border border-gray-300 rounded px-2 py-1"
+                          disabled={
+                            user.id === currentUser?.id || // Can't change own role
+                            (user.role === 'super_admin' && !isSuperAdmin()) // Only super admins can change super admin roles
+                          }
+                        >
+                          <option value="participant">Participant</option>
+                          <option value="admin">Admin</option>
+                          {isSuperAdmin() && <option value="super_admin">Super Admin</option>}
+                        </select>
+                        {user.role === 'super_admin' && !isSuperAdmin() && (
+                          <span className="ml-2 text-xs text-red-600 font-medium">Protected</span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 )
@@ -549,11 +592,11 @@ const UserManagement: React.FC = () => {
                     setEditingUser(null)
                     setEditForm({})
                   }}
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center"
-                  disabled={editingUser?.id === currentUser?.id} // Can't delete self
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={editingUser ? !canDeleteUser(editingUser) : true}
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Delete User
+                  {editingUser?.role === 'super_admin' && !isSuperAdmin() ? 'Protected User' : 'Delete User'}
                 </button>
                 <div className="flex space-x-3">
                   <button
