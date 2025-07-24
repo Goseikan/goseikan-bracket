@@ -58,11 +58,11 @@ export const getRankCategory = (rank: KendoRank | undefined | null): 'mudansha' 
 export const getRankBadgeClass = (rank: KendoRank | undefined | null): string => {
   if (!rank) {
     // Fallback for undefined/null ranks
-    return 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800'
+    return 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 whitespace-nowrap'
   }
   
   const category = getRankCategory(rank)
-  const baseClasses = 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium'
+  const baseClasses = 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap'
   
   switch (category) {
     case 'mudansha':
