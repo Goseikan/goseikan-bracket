@@ -17,6 +17,16 @@ const UserManagement: React.FC = () => {
   const [deletingUser, setDeletingUser] = useState<User | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [editForm, setEditForm] = useState<Partial<User>>({})
+  
+  // Dojo/Team search state
+  const [dojoSearchQuery, setDojoSearchQuery] = useState('')
+  const [teamSearchQuery, setTeamSearchQuery] = useState('')
+  const [dojoSuggestions, setDojoSuggestions] = useState<Dojo[]>([])
+  const [teamSuggestions, setTeamSuggestions] = useState<Team[]>([])
+  const [showDojoSuggestions, setShowDojoSuggestions] = useState(false)
+  const [showTeamSuggestions, setShowTeamSuggestions] = useState(false)
+  const [selectedDojo, setSelectedDojo] = useState<Dojo | null>(null)
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null)
 
   // Filter users based on search query
   const filteredUsers = users.filter(user => 
@@ -56,6 +66,32 @@ const UserManagement: React.FC = () => {
       dojoId: user.dojoId,
       teamId: user.teamId
     })
+    
+    // Set initial dojo and team
+    const userDojo = dojos.find(d => d.id === user.dojoId)
+    const userTeam = teams.find(t => t.id === user.teamId)
+    
+    if (userDojo) {
+      setSelectedDojo(userDojo)
+      setDojoSearchQuery(userDojo.name)
+    } else {
+      setSelectedDojo(null)
+      setDojoSearchQuery('')
+    }
+    
+    if (userTeam) {
+      setSelectedTeam(userTeam)
+      setTeamSearchQuery(userTeam.name)
+    } else {
+      setSelectedTeam(null)
+      setTeamSearchQuery('')
+    }
+    
+    // Reset suggestions
+    setDojoSuggestions([])
+    setTeamSuggestions([])
+    setShowDojoSuggestions(false)
+    setShowTeamSuggestions(false)
   }
 
   // Handle user edit save
@@ -79,6 +115,14 @@ const UserManagement: React.FC = () => {
   const handleCancelEdit = () => {
     setEditingUser(null)
     setEditForm({})
+    setDojoSearchQuery('')
+    setTeamSearchQuery('')
+    setDojoSuggestions([])
+    setTeamSuggestions([])
+    setSelectedDojo(null)
+    setSelectedTeam(null)
+    setShowDojoSuggestions(false)
+    setShowTeamSuggestions(false)
   }
 
   // Handle user role change
@@ -89,6 +133,63 @@ const UserManagement: React.FC = () => {
       console.error('Failed to update user role:', error)
     }
   }
+
+  // Handle dojo selection
+  const handleDojoSelection = (dojo: Dojo) => {
+    setSelectedDojo(dojo)
+    setDojoSearchQuery(dojo.name)
+    setShowDojoSuggestions(false)
+    setEditForm(prev => ({ 
+      ...prev, 
+      dojoId: dojo.id,
+      teamId: undefined // Reset team when dojo changes
+    }))
+    
+    // Clear team selection when dojo changes
+    setSelectedTeam(null)
+    setTeamSearchQuery('')
+    setShowTeamSuggestions(false)
+  }
+
+  // Handle team selection
+  const handleTeamSelection = (team: Team) => {
+    setSelectedTeam(team)
+    setTeamSearchQuery(team.name)
+    setShowTeamSuggestions(false)
+    setEditForm(prev => ({ 
+      ...prev, 
+      teamId: team.id
+    }))
+  }
+
+  // Update dojo suggestions
+  React.useEffect(() => {
+    if (showDojoSuggestions && dojoSearchQuery.length > 0) {
+      const suggestions = dojos
+        .filter(dojo => 
+          dojo.name.toLowerCase().includes(dojoSearchQuery.toLowerCase())
+        )
+        .slice(0, 5)
+      setDojoSuggestions(suggestions)
+    } else {
+      setDojoSuggestions([])
+    }
+  }, [dojoSearchQuery, dojos, showDojoSuggestions])
+
+  // Update team suggestions
+  React.useEffect(() => {
+    if (showTeamSuggestions && selectedDojo) {
+      const dojoTeams = teams.filter(team => team.dojoId === selectedDojo.id)
+      const suggestions = dojoTeams
+        .filter(team => 
+          team.name.toLowerCase().includes(teamSearchQuery.toLowerCase())
+        )
+        .slice(0, 5)
+      setTeamSuggestions(suggestions)
+    } else {
+      setTeamSuggestions([])
+    }
+  }, [teamSearchQuery, selectedDojo, teams, showTeamSuggestions])
 
   // Handle team/dojo switch
   const handleTeamSwitch = async (user: User, newTeamId: string) => {
@@ -328,26 +429,48 @@ const UserManagement: React.FC = () => {
               {/* Dojo Selection */}
               <div>
                 <label className="block text-body-small font-medium text-gray-700 mb-1">
-                  Dojo
+                  Dojo <span className="text-red-500">*</span>
                 </label>
-                <select
-                  value={editForm.dojoId || ''}
-                  onChange={(e) => {
-                    const newDojoId = e.target.value
-                    setEditForm(prev => ({ 
-                      ...prev, 
-                      dojoId: newDojoId,
-                      teamId: '' // Reset team when dojo changes
-                    }))
-                  }}
-                  className="input w-full"
-                  required
-                >
-                  <option value="">Select Dojo</option>
-                  {dojos.map(dojo => (
-                    <option key={dojo.id} value={dojo.id}>{dojo.name}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={dojoSearchQuery}
+                    onChange={(e) => setDojoSearchQuery(e.target.value)}
+                    onBlur={() => {
+                      setTimeout(() => setShowDojoSuggestions(false), 150)
+                    }}
+                    onClick={() => {
+                      setShowDojoSuggestions(true)
+                    }}
+                    placeholder="Search for dojos..."
+                    className="input w-full"
+                    required
+                  />
+                  {showDojoSuggestions && dojoSuggestions.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                      {dojoSuggestions.map((dojo) => (
+                        <button
+                          key={dojo.id}
+                          onClick={() => handleDojoSelection(dojo)}
+                          className="w-full text-left px-4 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                        >
+                          <div className="font-medium">{dojo.name}</div>
+                          {dojo.location && (
+                            <div className="text-sm text-gray-500">{dojo.location}</div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {selectedDojo && (
+                  <div className="mt-2 p-2 bg-green-50 rounded border border-green-200">
+                    <div className="text-sm font-medium text-green-800">Selected: {selectedDojo.name}</div>
+                    {selectedDojo.location && (
+                      <div className="text-xs text-green-600">{selectedDojo.location}</div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Team Selection */}
@@ -355,31 +478,62 @@ const UserManagement: React.FC = () => {
                 <label className="block text-body-small font-medium text-gray-700 mb-1">
                   Team
                 </label>
-                <select
-                  value={editForm.teamId || ''}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, teamId: e.target.value }))}
-                  className="input w-full"
-                  disabled={!editForm.dojoId}
-                >
-                  <option value="">Select Team</option>
-                  {teams
-                    .filter(team => team.dojoId === editForm.dojoId)
-                    .map(team => {
-                      const isCurrentTeam = team.id === editingUser?.teamId
-                      const isFull = team.players.length >= 7 && !isCurrentTeam
-                      return (
-                        <option 
-                          key={team.id} 
-                          value={team.id}
-                          disabled={isFull}
-                        >
-                          {team.name} ({team.players.length}/7) {isFull ? '- Full' : ''}
-                        </option>
-                      )
-                    })
-                  }
-                </select>
-                {!editForm.dojoId && (
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={teamSearchQuery}
+                    onChange={(e) => setTeamSearchQuery(e.target.value)}
+                    onBlur={() => {
+                      setTimeout(() => setShowTeamSuggestions(false), 150)
+                    }}
+                    onClick={() => {
+                      if (selectedDojo) {
+                        setShowTeamSuggestions(true)
+                      }
+                    }}
+                    placeholder={selectedDojo ? `Search teams in ${selectedDojo.name}...` : "Select a dojo first"}
+                    className="input w-full"
+                    disabled={!selectedDojo}
+                  />
+                  {showTeamSuggestions && teamSuggestions.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                      {teamSuggestions.map((team) => {
+                        const memberCount = team.players?.length || 0
+                        const isCurrentTeam = team.id === editingUser?.teamId
+                        const isFull = memberCount >= 7 && !isCurrentTeam
+                        
+                        return (
+                          <button
+                            key={team.id}
+                            onClick={() => handleTeamSelection(team)}
+                            disabled={isFull}
+                            className={`w-full text-left px-4 py-2 border-b border-gray-100 last:border-b-0 ${
+                              isFull 
+                                ? 'bg-gray-50 text-gray-400 cursor-not-allowed' 
+                                : 'hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex justify-between items-center">
+                              <div className="font-medium">{team.name}</div>
+                              <div className="text-sm text-gray-500">
+                                {memberCount}/7 {isFull && '(Full)'}
+                              </div>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+                {selectedTeam && (
+                  <div className="mt-2 p-2 bg-green-50 rounded border border-green-200">
+                    <div className="text-sm font-medium text-green-800">Selected: {selectedTeam.name}</div>
+                    <div className="text-xs text-green-600">
+                      {selectedTeam.players?.length || 0}/7 members
+                    </div>
+                  </div>
+                )}
+                {!selectedDojo && (
                   <p className="text-body-small text-gray-500 mt-1">
                     Select a dojo first to choose a team
                   </p>
