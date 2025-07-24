@@ -19,6 +19,9 @@ const AdminControls: React.FC = () => {
     name: tournament?.name || '',
     description: tournament?.description || ''
   })
+  const [reviewingSeedGroups, setReviewingSeedGroups] = useState(false)
+  const [previewSeedGroups, setPreviewSeedGroups] = useState<any[]>([])
+  const [seedGroupStats, setSeedGroupStats] = useState<any>(null)
 
   const handleGenerateSeedGroups = async () => {
     if (!tournament) return
@@ -27,14 +30,66 @@ const AdminControls: React.FC = () => {
     setMessage(null)
 
     try {
-      // Generate 4 seed groups
+      // Generate 4 seed groups for preview
       const seedGroups = generateSeedGroups(teams, 4)
       
-      // Update tournament with seed groups and change status
+      // Calculate statistics for review
+      const stats = {
+        totalGroups: seedGroups.length,
+        totalMatches: seedGroups.reduce((total, group) => total + group.matches.length, 0),
+        averageTeamsPerGroup: (seedGroups.reduce((total, group) => total + group.teams.length, 0) / seedGroups.length).toFixed(1),
+        dojoSeparationScore: calculateDojoSeparationScore(seedGroups)
+      }
+
+      setPreviewSeedGroups(seedGroups)
+      setSeedGroupStats(stats)
+      setReviewingSeedGroups(true)
+      
+      setMessage({
+        type: 'success',
+        text: 'Seed groups generated successfully! Please review the groups below.'
+      })
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Failed to generate seed groups'
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const calculateDojoSeparationScore = (groups: any[]) => {
+    let conflicts = 0
+    let totalPairings = 0
+    
+    groups.forEach(group => {
+      const teams = group.teams
+      for (let i = 0; i < teams.length; i++) {
+        for (let j = i + 1; j < teams.length; j++) {
+          totalPairings++
+          if (teams[i].dojoId === teams[j].dojoId) {
+            conflicts++
+          }
+        }
+      }
+    })
+    
+    return totalPairings > 0 ? Math.round(((totalPairings - conflicts) / totalPairings) * 100) : 100
+  }
+
+  const handleApproveSeedGroups = async () => {
+    if (!tournament || !previewSeedGroups.length) return
+
+    setLoading(true)
+    setMessage(null)
+
+    try {
+      // Update tournament with approved seed groups and change status
       const updatedTournament = {
         ...tournament,
         status: 'seed' as const,
-        seedGroups,
+        seedGroups: previewSeedGroups,
         updatedAt: new Date().toISOString()
       }
 
@@ -48,18 +103,33 @@ const AdminControls: React.FC = () => {
       // Update context
       updateTournament(updatedTournament)
 
+      // Clear review state
+      setReviewingSeedGroups(false)
+      setPreviewSeedGroups([])
+      setSeedGroupStats(null)
+
       setMessage({
         type: 'success',
-        text: `Successfully generated ${seedGroups.length} seed groups with ${seedGroups.reduce((total, group) => total + group.matches.length, 0)} matches`
+        text: `Seed groups approved! Tournament advanced to seed stage with ${seedGroupStats?.totalMatches} matches.`
       })
     } catch (error) {
       setMessage({
         type: 'error',
-        text: error instanceof Error ? error.message : 'Failed to generate seed groups'
+        text: error instanceof Error ? error.message : 'Failed to approve seed groups'
       })
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleRejectSeedGroups = () => {
+    setReviewingSeedGroups(false)
+    setPreviewSeedGroups([])
+    setSeedGroupStats(null)
+    setMessage({
+      type: 'success',
+      text: 'Seed groups rejected. You can generate new ones or try again.'
+    })
   }
 
   const handleAdvanceToMain = async () => {
@@ -183,7 +253,7 @@ const AdminControls: React.FC = () => {
     }
   }
 
-  const canGenerateSeeds = tournament?.status === 'registration' && teams.length >= 4
+  const canGenerateSeeds = tournament?.status === 'registration' && teams.length >= 4 && !reviewingSeedGroups
   const canAdvanceToMain = tournament?.status === 'seed' && tournament.seedGroups.length > 0
   const allSeedGroupsComplete = tournament?.seedGroups.every(group => 
     group.matches.every(match => match.status === 'completed')
@@ -378,6 +448,134 @@ const AdminControls: React.FC = () => {
           </>
         )}
       </div>
+
+      {/* Seed Groups Review Interface */}
+      {reviewingSeedGroups && previewSeedGroups.length > 0 && (
+        <div className="mt-8 p-6 border border-blue-200 rounded-lg bg-blue-50">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center">
+              <Users className="w-6 h-6 text-blue-600 mr-3" />
+              <div>
+                <h3 className="text-title-large font-semibold text-blue-900">
+                  Review Seed Groups
+                </h3>
+                <p className="text-body-medium text-blue-700">
+                  Please review the generated groups before approval
+                </p>
+              </div>
+            </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={handleRejectSeedGroups}
+                disabled={loading}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-body-medium font-medium transition-colors disabled:opacity-50"
+              >
+                Reject
+              </button>
+              <button
+                onClick={handleApproveSeedGroups}
+                disabled={loading}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-body-medium font-medium transition-colors disabled:opacity-50"
+              >
+                {loading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Approving...
+                  </div>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Approve Groups
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Statistics Overview */}
+          {seedGroupStats && (
+            <div className="grid md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-white rounded-lg p-4 text-center">
+                <div className="text-title-large font-bold text-blue-600">{seedGroupStats.totalGroups}</div>
+                <div className="text-body-small text-gray-600">Groups</div>
+              </div>
+              <div className="bg-white rounded-lg p-4 text-center">
+                <div className="text-title-large font-bold text-blue-600">{seedGroupStats.totalMatches}</div>
+                <div className="text-body-small text-gray-600">Total Matches</div>
+              </div>
+              <div className="bg-white rounded-lg p-4 text-center">
+                <div className="text-title-large font-bold text-blue-600">{seedGroupStats.averageTeamsPerGroup}</div>
+                <div className="text-body-small text-gray-600">Avg Teams/Group</div>
+              </div>
+              <div className="bg-white rounded-lg p-4 text-center">
+                <div className={`text-title-large font-bold ${
+                  seedGroupStats.dojoSeparationScore >= 80 ? 'text-green-600' :
+                  seedGroupStats.dojoSeparationScore >= 60 ? 'text-yellow-600' : 'text-red-600'
+                }`}>
+                  {seedGroupStats.dojoSeparationScore}%
+                </div>
+                <div className="text-body-small text-gray-600">Dojo Separation</div>
+              </div>
+            </div>
+          )}
+
+          {/* Group Preview */}
+          <div className="grid md:grid-cols-2 gap-4">
+            {previewSeedGroups.map((group, index) => (
+              <div key={group.id} className="bg-white rounded-lg p-4">
+                <h4 className="text-title-medium font-semibold text-gray-900 mb-3">
+                  {group.name}
+                </h4>
+                <div className="space-y-2">
+                  {group.teams.map((team: any, teamIndex: number) => {
+                    const dojoConflicts = group.teams.filter((t: any) => t.dojoId === team.dojoId).length - 1
+                    return (
+                      <div
+                        key={team.id}
+                        className={`flex items-center justify-between p-2 rounded ${
+                          dojoConflicts > 0 ? 'bg-red-50 border border-red-200' : 'bg-gray-50'
+                        }`}
+                      >
+                        <div>
+                          <div className="text-body-medium font-medium text-gray-900">
+                            {team.name}
+                          </div>
+                          <div className="text-body-small text-gray-600">
+                            {teams.find(t => t.id === team.id)?.players?.length || 0} members
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          {dojoConflicts > 0 && (
+                            <div className="text-xs text-red-600 font-medium">
+                              ⚠️ {dojoConflicts} same-dojo conflict{dojoConflicts > 1 ? 's' : ''}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <div className="text-body-small text-gray-600">
+                    {group.matches.length} matches • {group.teams.length} teams
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 p-3 bg-blue-100 border border-blue-300 rounded-lg">
+            <p className="text-body-small text-blue-800">
+              <strong>Dojo Separation Score:</strong> Higher percentages indicate better separation of teams from the same dojo.
+              {seedGroupStats && seedGroupStats.dojoSeparationScore < 80 && (
+                <span className="block mt-1">
+                  ⚠️ Consider regenerating if separation score is too low for your tournament requirements.
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Tournament Details Edit Modal */}
       {editingTournament && isSuperAdmin() && (
