@@ -43,6 +43,35 @@
   html {
     scroll-behavior: smooth;
   }
+  
+  /* Custom animations for live matches */
+  @keyframes glow {
+    0%, 100% {
+      box-shadow: 0 0 5px rgba(251, 191, 36, 0.5), 0 0 10px rgba(251, 191, 36, 0.3), 0 0 15px rgba(251, 191, 36, 0.2);
+    }
+    50% {
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.8), 0 0 20px rgba(251, 191, 36, 0.6), 0 0 30px rgba(251, 191, 36, 0.4);
+    }
+  }
+  
+  @keyframes shimmer {
+    0% {
+      background-position: -200px 0;
+    }
+    100% {
+      background-position: calc(200px + 100%) 0;
+    }
+  }
+  
+  .live-match-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+  
+  .live-match-shimmer {
+    background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.1), transparent);
+    background-size: 200px 100%;
+    animation: shimmer 1.5s infinite;
+  }
 }
 
 /* Material Design 3 component styles */
