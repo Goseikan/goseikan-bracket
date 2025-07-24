@@ -1,8 +1,8 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { useTournament } from '../contexts/TournamentContext'
-import { Trophy, Users, Sword, Calendar, ArrowRight, User } from 'lucide-react'
+import React from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { useTournament } from "../contexts/TournamentContext";
+import { Trophy, Users, Sword, Calendar, ArrowRight, User } from "lucide-react";
 
 /**
  * HomePage component - Landing page with Material Design 3 styling
@@ -10,16 +10,16 @@ import { Trophy, Users, Sword, Calendar, ArrowRight, User } from 'lucide-react'
  */
 
 const HomePage: React.FC = () => {
-  const { user } = useAuth()
-  const { tournament, dojos, teams, users } = useTournament()
+  const { user } = useAuth();
+  const { tournament, dojos, teams, users } = useTournament();
 
   // Calculate tournament statistics
   const stats = {
     totalParticipants: users.length,
     totalTeams: teams.length,
     totalDojos: dojos.length,
-    tournamentStatus: tournament?.status || 'registration'
-  }
+    tournamentStatus: tournament?.status || "registration",
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -33,20 +33,25 @@ const HomePage: React.FC = () => {
                 <Sword className="w-8 h-8 text-white" />
               </div>
               <h1 className="text-display-medium sm:text-display-large font-bold text-gray-900">
-                Kendo Tournament
+                Kendo Taikai Manager
               </h1>
             </div>
-            
+
             {/* Tournament subtitle */}
             <p className="text-headline-small text-gray-600 mb-8 max-w-3xl mx-auto">
-              {tournament ? tournament.name : 'Welcome to the premier kendo competition platform'}
+              {tournament
+                ? tournament.name
+                : "Welcome to the premier kendo competition platform"}
             </p>
 
             {/* Tournament status badge */}
             {tournament && (
               <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary-100 text-primary-800 text-label-large font-medium mb-8">
                 <Calendar className="w-4 h-4 mr-2" />
-                Status: {tournament.status.charAt(0).toUpperCase() + tournament.status.slice(1)} Stage
+                Status:{" "}
+                {tournament.status.charAt(0).toUpperCase() +
+                  tournament.status.slice(1)}{" "}
+                Stage
               </div>
             )}
 
@@ -97,7 +102,9 @@ const HomePage: React.FC = () => {
               <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Users className="w-6 h-6 text-primary-600" />
               </div>
-              <div className="text-display-small font-bold text-gray-900">{stats.totalParticipants}</div>
+              <div className="text-display-small font-bold text-gray-900">
+                {stats.totalParticipants}
+              </div>
               <div className="text-body-medium text-gray-600">Participants</div>
             </div>
 
@@ -105,7 +112,9 @@ const HomePage: React.FC = () => {
               <div className="w-12 h-12 bg-accent-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Trophy className="w-6 h-6 text-accent-600" />
               </div>
-              <div className="text-display-small font-bold text-gray-900">{stats.totalTeams}</div>
+              <div className="text-display-small font-bold text-gray-900">
+                {stats.totalTeams}
+              </div>
               <div className="text-body-medium text-gray-600">Teams</div>
             </div>
 
@@ -113,7 +122,9 @@ const HomePage: React.FC = () => {
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Sword className="w-6 h-6 text-gray-600" />
               </div>
-              <div className="text-display-small font-bold text-gray-900">{stats.totalDojos}</div>
+              <div className="text-display-small font-bold text-gray-900">
+                {stats.totalDojos}
+              </div>
               <div className="text-body-medium text-gray-600">Dojos</div>
             </div>
 
@@ -121,7 +132,9 @@ const HomePage: React.FC = () => {
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Calendar className="w-6 h-6 text-green-600" />
               </div>
-              <div className="text-title-large font-bold text-gray-900 capitalize">{stats.tournamentStatus}</div>
+              <div className="text-title-large font-bold text-gray-900 capitalize">
+                {stats.tournamentStatus}
+              </div>
               <div className="text-body-medium text-gray-600">Stage</div>
             </div>
           </div>
@@ -136,7 +149,8 @@ const HomePage: React.FC = () => {
               How the Tournament Works
             </h2>
             <p className="text-body-large text-gray-600 max-w-3xl mx-auto">
-              Our tournament follows traditional kendo competition format with modern digital tracking
+              Our tournament follows traditional kendo competition format with
+              modern digital tracking
             </p>
           </div>
 
@@ -150,9 +164,12 @@ const HomePage: React.FC = () => {
                 Registration
               </h3>
               <p className="text-body-medium text-gray-600 mb-4">
-                Register with your dojo and team information. Include your kendo rank to help with tournament seeding.
+                Register with your dojo and team information. Include your kendo
+                rank to help with tournament seeding.
               </p>
-              <div className="text-label-medium text-primary-600 font-medium">Step 1</div>
+              <div className="text-label-medium text-primary-600 font-medium">
+                Step 1
+              </div>
             </div>
 
             {/* Seed Stage */}
@@ -164,9 +181,12 @@ const HomePage: React.FC = () => {
                 Seed Stage
               </h3>
               <p className="text-body-medium text-gray-600 mb-4">
-                Teams compete in round-robin groups. Rankings determine advancement to the main tournament bracket.
+                Teams compete in round-robin groups. Rankings determine
+                advancement to the main tournament bracket.
               </p>
-              <div className="text-label-medium text-accent-600 font-medium">Step 2</div>
+              <div className="text-label-medium text-accent-600 font-medium">
+                Step 2
+              </div>
             </div>
 
             {/* Main Tournament */}
@@ -178,9 +198,12 @@ const HomePage: React.FC = () => {
                 Main Tournament
               </h3>
               <p className="text-body-medium text-gray-600 mb-4">
-                Double elimination bracket with real-time scoring tracking for men, kote, tsuki, do, and hansoku.
+                Double elimination bracket with real-time scoring tracking for
+                men, kote, tsuki, do, and hansoku.
               </p>
-              <div className="text-label-medium text-green-600 font-medium">Step 3</div>
+              <div className="text-label-medium text-green-600 font-medium">
+                Step 3
+              </div>
             </div>
           </div>
         </div>
@@ -195,18 +218,18 @@ const HomePage: React.FC = () => {
           <p className="text-body-large text-primary-100 mb-8">
             Join the tournament today and showcase your kendo skills
           </p>
-          
+
           {!user ? (
-            <Link 
-              to="/register" 
+            <Link
+              to="/register"
               className="inline-flex items-center px-8 py-4 bg-white text-primary-600 rounded-full text-title-medium font-semibold hover:bg-gray-50 transition-colors"
             >
               Register Now
               <ArrowRight className="w-5 h-5 ml-2" />
             </Link>
           ) : (
-            <Link 
-              to="/dashboard" 
+            <Link
+              to="/dashboard"
               className="inline-flex items-center px-8 py-4 bg-white text-primary-600 rounded-full text-title-medium font-semibold hover:bg-gray-50 transition-colors"
             >
               View Dashboard
@@ -216,7 +239,7 @@ const HomePage: React.FC = () => {
         </div>
       </section>
     </div>
-  )
-}
+  );
+};
 
-export default HomePage
+export default HomePage;
