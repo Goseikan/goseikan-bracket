@@ -74,8 +74,8 @@ const Navigation: React.FC = () => {
             <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
               <Sword className="w-5 h-5 text-white" />
             </div>
-            <span className="hidden sm:block">Kendo Tournament</span>
-            <span className="sm:hidden">Tournament</span>
+            <span className="hidden sm:block">Kendo Taikai Manager</span>
+            <span className="sm:hidden">Taikai</span>
           </Link>
 
           {/* Desktop navigation */}
