@@ -1,9 +1,11 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useTournament } from '../contexts/TournamentContext'
 import BracketVisualization from '../components/BracketVisualization'
 import DoubleEliminationBracket from '../components/DoubleEliminationBracket'
-import { getTournamentProgress } from '../utils/tournamentLogic'
+import MatchResultModal from '../components/MatchResultModal'
+import { getTournamentProgress, updateStandings } from '../utils/tournamentLogic'
 import { BracketMatch } from '../utils/doubleEliminationBracket'
+import { Match, Team } from '../types'
 import { Trophy, Users, Calendar, BarChart3 } from 'lucide-react'
 
 /**
@@ -12,15 +14,114 @@ import { Trophy, Users, Calendar, BarChart3 } from 'lucide-react'
  */
 
 const BracketPage: React.FC = () => {
-  const { tournament, teams, dojos } = useTournament()
+  const { tournament, teams, dojos, updateMatch, updateTournament } = useTournament()
+  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   // Calculate tournament progress
   const progress = tournament ? getTournamentProgress(tournament) : null
 
-  // Handle match click for navigation
-  const handleMatchClick = (match: BracketMatch) => {
-    console.log('Match clicked:', match)
+  // Handle seed stage match click for result reporting
+  const handleSeedMatchClick = (match: Match) => {
+    setSelectedMatch(match)
+    setIsModalOpen(true)
+  }
+
+  // Handle main bracket match click for navigation
+  const handleMainMatchClick = (match: BracketMatch) => {
+    console.log('Main bracket match clicked:', match)
     // TODO: Navigate to match details or court view
+  }
+
+  // Handle match result save
+  const handleMatchResultSave = async (matchId: string, winnerId: string, scores: { team1Wins: number, team2Wins: number, team1TotalPoints?: number, team2TotalPoints?: number, playerSets?: any[], status?: string, overtime?: any }) => {
+    if (!tournament || !selectedMatch) return
+
+    try {
+      // Update the match with the result
+      const updatedMatch: Match = {
+        ...selectedMatch,
+        status: (scores.status as any) || (winnerId ? 'completed' : 'in_progress'),
+        winnerId,
+        overtime: scores.overtime || selectedMatch.overtime,
+        scores: {
+          ...selectedMatch.scores,
+          team1Wins: scores.team1Wins,
+          team2Wins: scores.team2Wins,
+          team1TotalPoints: scores.team1TotalPoints || scores.team1Wins,
+          team2TotalPoints: scores.team2TotalPoints || scores.team2Wins,
+          playerSets: scores.playerSets || []
+        }
+      }
+
+      // Update match in context
+      await updateMatch(updatedMatch)
+
+      // Find the group this match belongs to and update standings
+      const updatedGroups = tournament.seedGroups.map(group => {
+        const matchInGroup = group.matches.find(m => m.id === matchId)
+        if (matchInGroup) {
+          // Update the match in the group
+          const updatedMatches = group.matches.map(m => 
+            m.id === matchId ? updatedMatch : m
+          )
+          
+          // Only update standings if this is a newly completed match
+          // Check if the original match was not completed but the updated match is
+          const wasAlreadyCompleted = matchInGroup.status === 'completed'
+          const isNowCompleted = updatedMatch.status === 'completed'
+          
+          let updatedStandings = group.standings
+          if (!wasAlreadyCompleted && isNowCompleted) {
+            // This is a newly completed match, update standings
+            updatedStandings = updateStandings(group.standings, updatedMatch)
+          } else if (wasAlreadyCompleted && isNowCompleted) {
+            // Match was already completed - recalculate entire group standings to avoid duplicates
+            // Reset all standings to 0 and recalculate from all completed matches
+            const resetStandings = group.standings.map(s => ({
+              ...s,
+              wins: 0,
+              losses: 0,
+              points: 0,
+              ranking: 0
+            }))
+            
+            // Recalculate standings from all completed matches in the group
+            updatedStandings = updatedMatches.reduce((standings, match) => {
+              if (match.status === 'completed') {
+                return updateStandings(standings, match)
+              }
+              return standings
+            }, resetStandings)
+          }
+          
+          return {
+            ...group,
+            matches: updatedMatches,
+            standings: updatedStandings
+          }
+        }
+        return group
+      })
+
+      // Update tournament with new groups
+      const updatedTournament = {
+        ...tournament,
+        seedGroups: updatedGroups,
+        updatedAt: new Date().toISOString()
+      }
+
+      updateTournament(updatedTournament)
+
+    } catch (error) {
+      console.error('Failed to save match result:', error)
+      throw error
+    }
+  }
+
+  // Get team by ID helper
+  const getTeamById = (teamId: string): Team | undefined => {
+    return teams.find(team => team.id === teamId)
   }
 
   return (
@@ -128,10 +229,8 @@ const BracketPage: React.FC = () => {
               <BracketVisualization
                 groups={tournament.seedGroups}
                 teams={teams}
-                onMatchClick={(match) => {
-                  console.log('Match clicked:', match)
-                  // TODO: Navigate to match details
-                }}
+                dojos={dojos}
+                onMatchClick={handleSeedMatchClick}
               />
             )}
 
@@ -139,7 +238,7 @@ const BracketPage: React.FC = () => {
             {tournament.status === 'main' && tournament.mainBracket && (
               <DoubleEliminationBracket
                 qualifiedTeams={teams.filter(team => team.seedRanking && team.seedRanking <= 2)}
-                onMatchClick={handleMatchClick}
+                onMatchClick={handleMainMatchClick}
               />
             )}
 
@@ -154,6 +253,21 @@ const BracketPage: React.FC = () => {
               There is currently no active tournament. Check back later for updates.
             </p>
           </div>
+        )}
+
+        {/* Match Result Modal */}
+        {selectedMatch && (
+          <MatchResultModal
+            match={selectedMatch}
+            team1={getTeamById(selectedMatch.team1Id)!}
+            team2={getTeamById(selectedMatch.team2Id)!}
+            isOpen={isModalOpen}
+            onClose={() => {
+              setIsModalOpen(false)
+              setSelectedMatch(null)
+            }}
+            onSave={handleMatchResultSave}
+          />
         )}
       </div>
     </div>
