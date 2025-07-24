@@ -3,7 +3,7 @@ import { useTournament } from '../contexts/TournamentContext'
 import { Team } from '../types'
 import LogoUpload from './LogoUpload'
 import { getRankBadgeClass } from '../utils/kendoRanks'
-import { Trophy, Trash2, Edit3, AlertTriangle, X, Users, Building, Check } from 'lucide-react'
+import { Trophy, Trash2, Edit3, AlertTriangle, X, Users, Building, Check, Search } from 'lucide-react'
 
 /**
  * TeamManagement component - Admin interface for managing teams
@@ -12,11 +12,11 @@ import { Trophy, Trash2, Edit3, AlertTriangle, X, Users, Building, Check } from 
 
 const TeamManagement: React.FC = () => {
   const { teams, dojos, users, updateTeam, deleteTeam } = useTournament()
-  const [editingNameTeam, setEditingNameTeam] = useState<Team | null>(null)
+  const [editingTeam, setEditingTeam] = useState<Team | null>(null)
   const [editingLogoTeam, setEditingLogoTeam] = useState<Team | null>(null)
-  const [editingName, setEditingName] = useState<string>('')
   const [deletingTeam, setDeletingTeam] = useState<Team | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [editForm, setEditForm] = useState<Partial<Team>>({})
 
   // Filter teams based on search query
   const filteredTeams = teams.filter(team => 
@@ -43,30 +43,39 @@ const TeamManagement: React.FC = () => {
     }
   }
 
-  // Handle name editing start
-  const handleStartNameEdit = (team: Team) => {
-    setEditingNameTeam(team)
-    setEditingName(team.name)
+  // Handle team edit start
+  const handleEditTeam = (team: Team) => {
+    setEditingTeam(team)
+    setEditForm({
+      name: team.name,
+      dojoId: team.dojoId,
+      logo: team.logo
+    })
   }
 
-  // Handle name save
-  const handleNameSave = async () => {
-    if (!editingNameTeam || !editingName.trim()) return
+  // Handle team edit save
+  const handleSaveTeam = async () => {
+    if (!editingTeam) return
 
     try {
-      await updateTeam(editingNameTeam.id, { name: editingName.trim() })
-      setEditingNameTeam(null)
-      setEditingName('')
+      await updateTeam(editingTeam.id, {
+        ...editingTeam,
+        ...editForm,
+        updatedAt: new Date().toISOString()
+      })
+      setEditingTeam(null)
+      setEditForm({})
     } catch (error) {
-      console.error('Failed to update team name:', error)
+      console.error('Failed to update team:', error)
     }
   }
 
-  // Handle name cancel
-  const handleNameCancel = () => {
-    setEditingNameTeam(null)
-    setEditingName('')
+  // Handle edit cancel
+  const handleCancelEdit = () => {
+    setEditingTeam(null)
+    setEditForm({})
   }
+
 
   // Handle logo upload
   const handleLogoUpdate = async (team: Team, logoData: string) => {
@@ -96,13 +105,26 @@ const TeamManagement: React.FC = () => {
 
       {/* Search */}
       <div className="card p-4">
-        <input
-          type="text"
-          placeholder="Search teams by name or dojo..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="input w-full"
-        />
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search teams by name or dojo..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="input w-full pl-10 pr-10"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors"
+              title="Clear search"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Teams Grid */}
@@ -111,80 +133,33 @@ const TeamManagement: React.FC = () => {
           const { dojo, members, memberCount } = getTeamDetails(team)
           
           return (
-            <div key={team.id} className="card p-6">
+            <div 
+              key={team.id} 
+              className="card p-6 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => handleEditTeam(team)}
+              title="Click to edit team"
+            >
               {/* Team Header */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center">
-                  {/* Team Logo */}
-                  {team.logo ? (
-                    <img
-                      src={team.logo}
-                      alt={`${team.name} logo`}
-                      className="w-12 h-12 rounded-lg object-cover border-2 border-accent-200 mr-3"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 bg-accent-200 rounded-lg flex items-center justify-center mr-3">
-                      <Trophy className="w-6 h-6 text-accent-600" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    {editingNameTeam?.id === team.id ? (
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="text"
-                          value={editingName}
-                          onChange={(e) => setEditingName(e.target.value)}
-                          className="text-title-medium font-semibold text-gray-900 bg-white border border-primary-300 rounded px-2 py-1 flex-1"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleNameSave()
-                            if (e.key === 'Escape') handleNameCancel()
-                          }}
-                          autoFocus
-                        />
-                        <button
-                          onClick={handleNameSave}
-                          className="text-green-600 hover:text-green-700 p-1 rounded"
-                          title="Save"
-                        >
-                          <Check className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={handleNameCancel}
-                          className="text-gray-600 hover:text-gray-700 p-1 rounded"
-                          title="Cancel"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <h3 
-                        className="text-title-medium font-semibold text-gray-900 truncate cursor-pointer hover:text-primary-600"
-                        onClick={() => handleStartNameEdit(team)}
-                        title="Click to edit name"
-                      >
-                        {team.name}
-                      </h3>
-                    )}
-                    <p className="text-body-small text-gray-500">
-                      {dojo?.name || 'Unknown Dojo'}
-                    </p>
+              <div className="flex items-center mb-4">
+                {/* Team Logo */}
+                {team.logo ? (
+                  <img
+                    src={team.logo}
+                    alt={`${team.name} logo`}
+                    className="w-12 h-12 rounded-lg object-cover border-2 border-accent-200 mr-3 flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-12 h-12 bg-accent-200 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                    <Trophy className="w-6 h-6 text-accent-600" />
                   </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => setEditingLogoTeam(team)}
-                    className="text-primary-600 hover:text-primary-700 p-1 rounded"
-                    title="Edit Logo"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setDeletingTeam(team)}
-                    className="text-red-600 hover:text-red-700 p-1 rounded"
-                    title="Delete Team"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                )}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-title-medium font-semibold text-gray-900 truncate">
+                    {team.name}
+                  </h3>
+                  <p className="text-body-small text-gray-500">
+                    {dojo?.name || 'Unknown Dojo'}
+                  </p>
                 </div>
               </div>
 
@@ -264,10 +239,138 @@ const TeamManagement: React.FC = () => {
         </div>
       )}
 
+      {/* Edit Team Modal */}
+      {editingTeam && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={handleCancelEdit}
+        >
+          <div 
+            className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-title-medium font-semibold text-gray-900">
+                Edit Team
+              </h3>
+              <button
+                onClick={handleCancelEdit}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={(e) => { e.preventDefault(); handleSaveTeam(); }} className="space-y-4">
+              {/* Team Name */}
+              <div>
+                <label className="block text-body-small font-medium text-gray-700 mb-1">
+                  Team Name
+                </label>
+                <input
+                  type="text"
+                  value={editForm.name || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                  className="input w-full"
+                  required
+                />
+              </div>
+
+              {/* Dojo Selection */}
+              <div>
+                <label className="block text-body-small font-medium text-gray-700 mb-1">
+                  Dojo
+                </label>
+                <select
+                  value={editForm.dojoId || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, dojoId: e.target.value }))}
+                  className="input w-full"
+                  required
+                >
+                  <option value="">Select Dojo</option>
+                  {dojos.map(dojo => (
+                    <option key={dojo.id} value={dojo.id}>{dojo.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Logo Management */}
+              <div>
+                <label className="block text-body-small font-medium text-gray-700 mb-1">
+                  Team Logo
+                </label>
+                <div className="flex items-center space-x-3">
+                  {editingTeam.logo ? (
+                    <img
+                      src={editingTeam.logo}
+                      alt="Current team logo"
+                      className="w-16 h-16 rounded-lg object-cover border border-gray-200"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
+                      <Trophy className="w-8 h-8 text-gray-400" />
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingLogoTeam(editingTeam)
+                    }}
+                    className="btn-outlined text-sm"
+                  >
+                    <Edit3 className="w-4 h-4 mr-1" />
+                    Change Logo
+                  </button>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-between pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeletingTeam(editingTeam)
+                    setEditingTeam(null)
+                    setEditForm({})
+                  }}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Team
+                </button>
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={handleCancelEdit}
+                    className="btn-outlined"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                  >
+                    <Check className="w-4 h-4 mr-2" />
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Logo Edit Modal */}
       {editingLogoTeam && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setEditingLogoTeam(null)}
+        >
+          <div 
+            className="bg-white rounded-lg p-6 max-w-md w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-title-medium font-semibold text-gray-900">
                 Update Team Logo
@@ -317,8 +420,14 @@ const TeamManagement: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {deletingTeam && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setDeletingTeam(null)}
+        >
+          <div 
+            className="bg-white rounded-lg p-6 max-w-md w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center mb-4">
               <AlertTriangle className="w-6 h-6 text-red-600 mr-3" />
               <h3 className="text-title-medium font-semibold text-gray-900">

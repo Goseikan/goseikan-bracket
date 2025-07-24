@@ -97,7 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     dispatch({ type: 'LOGIN_START' })
     
     try {
-      const isDevelopment = process.env.NODE_ENV === 'development' && !process.env.DATABASE_URL
+      const isDevelopment = import.meta.env.DEV || !import.meta.env.VITE_USE_DATABASE
       
       if (isDevelopment) {
         // Get users from localStorage (simulating API call)

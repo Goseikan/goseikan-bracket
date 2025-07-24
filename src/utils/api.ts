@@ -5,7 +5,7 @@
 
 import type { User, Dojo, Team, Tournament, Court, Match, ApiResponse } from '../types'
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
+const API_BASE_URL = import.meta.env.PROD 
   ? 'https://your-vercel-app.vercel.app/api' 
   : '/api'
 

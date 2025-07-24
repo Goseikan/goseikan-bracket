@@ -178,10 +178,17 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     
     try {
       // Check if we're in development mode and fallback to localStorage
-      const isDevelopment = process.env.NODE_ENV === 'development' && !process.env.DATABASE_URL
+      // In browser, we always use localStorage for now since we can't access DATABASE_URL
+      const isDevelopment = import.meta.env.DEV || !import.meta.env.VITE_USE_DATABASE
       
       if (isDevelopment) {
         // Fallback to localStorage for development without database
+        // Initialize sample data if not present
+        if (!localStorage.getItem('users')) {
+          const { initializeSampleData } = await import('../utils/sampleData')
+          initializeSampleData()
+        }
+        
         const tournaments = JSON.parse(localStorage.getItem('tournaments') || '[]')
         const activeTournament = tournaments.find((t: Tournament) => t.isActive) || null
         
@@ -271,7 +278,7 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
    */
   const updateMatch = async (match: Match): Promise<void> => {
     try {
-      const isDevelopment = process.env.NODE_ENV === 'development' && !process.env.DATABASE_URL
+      const isDevelopment = import.meta.env.DEV || !import.meta.env.VITE_USE_DATABASE
       
       if (isDevelopment) {
         // Update localStorage for development
@@ -342,7 +349,7 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
     
     try {
-      const isDevelopment = process.env.NODE_ENV === 'development' && !process.env.DATABASE_URL
+      const isDevelopment = import.meta.env.DEV || !import.meta.env.VITE_USE_DATABASE
       
       if (isDevelopment) {
         // Update localStorage for development
@@ -384,7 +391,7 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
     
     try {
-      const isDevelopment = process.env.NODE_ENV === 'development' && !process.env.DATABASE_URL
+      const isDevelopment = import.meta.env.DEV || !import.meta.env.VITE_USE_DATABASE
       
       if (isDevelopment) {
         // Update localStorage for development
@@ -418,7 +425,7 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const updatedDojo: Dojo = { ...dojo, ...updates, updatedAt: new Date().toISOString() }
     
     try {
-      const isDevelopment = process.env.NODE_ENV === 'development' && !process.env.DATABASE_URL
+      const isDevelopment = import.meta.env.DEV || !import.meta.env.VITE_USE_DATABASE
       
       if (isDevelopment) {
         // Update localStorage for development
@@ -445,7 +452,7 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
    */
   const deleteDojo = async (dojoId: string): Promise<void> => {
     try {
-      const isDevelopment = process.env.NODE_ENV === 'development' && !process.env.DATABASE_URL
+      const isDevelopment = import.meta.env.DEV || !import.meta.env.VITE_USE_DATABASE
       
       if (isDevelopment) {
         // Update localStorage - remove dojo, teams, and users
@@ -482,7 +489,7 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const updatedTeam: Team = { ...team, ...updates, updatedAt: new Date().toISOString() }
     
     try {
-      const isDevelopment = process.env.NODE_ENV === 'development' && !process.env.DATABASE_URL
+      const isDevelopment = import.meta.env.DEV || !import.meta.env.VITE_USE_DATABASE
       
       if (isDevelopment) {
         // Update localStorage for development
@@ -509,7 +516,7 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
    */
   const deleteTeam = async (teamId: string): Promise<void> => {
     try {
-      const isDevelopment = process.env.NODE_ENV === 'development' && !process.env.DATABASE_URL
+      const isDevelopment = import.meta.env.DEV || !import.meta.env.VITE_USE_DATABASE
       
       if (isDevelopment) {
         // Update localStorage - remove team and update users
@@ -554,7 +561,7 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const updatedUser: User = { ...user, ...updates, updatedAt: new Date().toISOString() }
     
     try {
-      const isDevelopment = process.env.NODE_ENV === 'development' && !process.env.DATABASE_URL
+      const isDevelopment = import.meta.env.DEV || !import.meta.env.VITE_USE_DATABASE
       
       if (isDevelopment) {
         // If team is changing, update team player lists
@@ -613,7 +620,7 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (!user) throw new Error('User not found')
     
     try {
-      const isDevelopment = process.env.NODE_ENV === 'development' && !process.env.DATABASE_URL
+      const isDevelopment = import.meta.env.DEV || !import.meta.env.VITE_USE_DATABASE
       
       if (isDevelopment) {
         // Remove from team if assigned

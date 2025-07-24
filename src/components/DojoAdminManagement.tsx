@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useTournament } from '../contexts/TournamentContext'
 import { Dojo } from '../types'
 import LogoUpload from './LogoUpload'
-import { Building, Trash2, Edit3, AlertTriangle, X, Users, Trophy, Check } from 'lucide-react'
+import { Building, Trash2, Edit3, AlertTriangle, X, Users, Trophy, Check, Search } from 'lucide-react'
 
 /**
  * DojoAdminManagement component - Admin interface for managing dojos
@@ -11,11 +11,11 @@ import { Building, Trash2, Edit3, AlertTriangle, X, Users, Trophy, Check } from 
 
 const DojoAdminManagement: React.FC = () => {
   const { dojos, teams, users, updateDojo, deleteDojo } = useTournament()
-  const [editingNameDojo, setEditingNameDojo] = useState<Dojo | null>(null)
+  const [editingDojo, setEditingDojo] = useState<Dojo | null>(null)
   const [editingLogoDojo, setEditingLogoDojo] = useState<Dojo | null>(null)
-  const [editingName, setEditingName] = useState<string>('')
   const [deletingDojo, setDeletingDojo] = useState<Dojo | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [editForm, setEditForm] = useState<Partial<Dojo>>({})
 
   // Filter dojos based on search query
   const filteredDojos = dojos.filter(dojo => 
@@ -44,30 +44,39 @@ const DojoAdminManagement: React.FC = () => {
     }
   }
 
-  // Handle name editing start
-  const handleStartNameEdit = (dojo: Dojo) => {
-    setEditingNameDojo(dojo)
-    setEditingName(dojo.name)
+  // Handle dojo edit start
+  const handleEditDojo = (dojo: Dojo) => {
+    setEditingDojo(dojo)
+    setEditForm({
+      name: dojo.name,
+      location: dojo.location,
+      logo: dojo.logo
+    })
   }
 
-  // Handle name save
-  const handleNameSave = async () => {
-    if (!editingNameDojo || !editingName.trim()) return
+  // Handle dojo edit save
+  const handleSaveDojo = async () => {
+    if (!editingDojo) return
 
     try {
-      await updateDojo(editingNameDojo.id, { name: editingName.trim() })
-      setEditingNameDojo(null)
-      setEditingName('')
+      await updateDojo(editingDojo.id, {
+        ...editingDojo,
+        ...editForm,
+        updatedAt: new Date().toISOString()
+      })
+      setEditingDojo(null)
+      setEditForm({})
     } catch (error) {
-      console.error('Failed to update dojo name:', error)
+      console.error('Failed to update dojo:', error)
     }
   }
 
-  // Handle name cancel
-  const handleNameCancel = () => {
-    setEditingNameDojo(null)
-    setEditingName('')
+  // Handle edit cancel
+  const handleCancelEdit = () => {
+    setEditingDojo(null)
+    setEditForm({})
   }
+
 
   // Handle logo upload
   const handleLogoUpdate = async (dojo: Dojo, logoData: string) => {
@@ -97,13 +106,26 @@ const DojoAdminManagement: React.FC = () => {
 
       {/* Search */}
       <div className="card p-4">
-        <input
-          type="text"
-          placeholder="Search dojos by name..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="input w-full"
-        />
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search dojos by name..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="input w-full pl-10 pr-10"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 hover:text-gray-600 transition-colors"
+              title="Clear search"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Dojos Grid */}
@@ -112,80 +134,33 @@ const DojoAdminManagement: React.FC = () => {
           const stats = getDojoStats(dojo)
           
           return (
-            <div key={dojo.id} className="card p-6">
+            <div 
+              key={dojo.id} 
+              className="card p-6 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => handleEditDojo(dojo)}
+              title="Click to edit dojo"
+            >
               {/* Dojo Header */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center">
-                  {/* Dojo Logo */}
-                  {dojo.logo ? (
-                    <img
-                      src={dojo.logo}
-                      alt={`${dojo.name} logo`}
-                      className="w-12 h-12 rounded-lg object-cover border-2 border-primary-200 mr-3"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 bg-primary-200 rounded-lg flex items-center justify-center mr-3">
-                      <Building className="w-6 h-6 text-primary-600" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    {editingNameDojo?.id === dojo.id ? (
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="text"
-                          value={editingName}
-                          onChange={(e) => setEditingName(e.target.value)}
-                          className="text-title-medium font-semibold text-gray-900 bg-white border border-primary-300 rounded px-2 py-1 flex-1"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleNameSave()
-                            if (e.key === 'Escape') handleNameCancel()
-                          }}
-                          autoFocus
-                        />
-                        <button
-                          onClick={handleNameSave}
-                          className="text-green-600 hover:text-green-700 p-1 rounded"
-                          title="Save"
-                        >
-                          <Check className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={handleNameCancel}
-                          className="text-gray-600 hover:text-gray-700 p-1 rounded"
-                          title="Cancel"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <h3 
-                        className="text-title-medium font-semibold text-gray-900 truncate cursor-pointer hover:text-primary-600"
-                        onClick={() => handleStartNameEdit(dojo)}
-                        title="Click to edit name"
-                      >
-                        {dojo.name}
-                      </h3>
-                    )}
-                    <p className="text-body-small text-gray-500">
-                      ID: {dojo.id}
-                    </p>
+              <div className="flex items-center mb-4">
+                {/* Dojo Logo */}
+                {dojo.logo ? (
+                  <img
+                    src={dojo.logo}
+                    alt={`${dojo.name} logo`}
+                    className="w-12 h-12 rounded-lg object-cover border-2 border-primary-200 mr-3 flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-12 h-12 bg-primary-200 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                    <Building className="w-6 h-6 text-primary-600" />
                   </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => setEditingLogoDojo(dojo)}
-                    className="text-primary-600 hover:text-primary-700 p-1 rounded"
-                    title="Edit Logo"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setDeletingDojo(dojo)}
-                    className="text-red-600 hover:text-red-700 p-1 rounded"
-                    title="Delete Dojo"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                )}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-title-medium font-semibold text-gray-900 truncate">
+                    {dojo.name}
+                  </h3>
+                  <p className="text-body-small text-gray-500">
+                    {dojo.location || 'No location specified'}
+                  </p>
                 </div>
               </div>
 
@@ -230,10 +205,134 @@ const DojoAdminManagement: React.FC = () => {
         </div>
       )}
 
+      {/* Edit Dojo Modal */}
+      {editingDojo && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={handleCancelEdit}
+        >
+          <div 
+            className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-title-medium font-semibold text-gray-900">
+                Edit Dojo
+              </h3>
+              <button
+                onClick={handleCancelEdit}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={(e) => { e.preventDefault(); handleSaveDojo(); }} className="space-y-4">
+              {/* Dojo Name */}
+              <div>
+                <label className="block text-body-small font-medium text-gray-700 mb-1">
+                  Dojo Name
+                </label>
+                <input
+                  type="text"
+                  value={editForm.name || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                  className="input w-full"
+                  required
+                />
+              </div>
+
+              {/* Location */}
+              <div>
+                <label className="block text-body-small font-medium text-gray-700 mb-1">
+                  Location
+                </label>
+                <input
+                  type="text"
+                  value={editForm.location || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, location: e.target.value }))}
+                  className="input w-full"
+                  placeholder="Enter dojo location"
+                />
+              </div>
+
+              {/* Logo Management */}
+              <div>
+                <label className="block text-body-small font-medium text-gray-700 mb-1">
+                  Dojo Logo
+                </label>
+                <div className="flex items-center space-x-3">
+                  {editingDojo.logo ? (
+                    <img
+                      src={editingDojo.logo}
+                      alt="Current dojo logo"
+                      className="w-16 h-16 rounded-lg object-cover border border-gray-200"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
+                      <Building className="w-8 h-8 text-gray-400" />
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingLogoDojo(editingDojo)
+                    }}
+                    className="btn-outlined text-sm"
+                  >
+                    <Edit3 className="w-4 h-4 mr-1" />
+                    Change Logo
+                  </button>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-between pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeletingDojo(editingDojo)
+                    setEditingDojo(null)
+                    setEditForm({})
+                  }}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Dojo
+                </button>
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={handleCancelEdit}
+                    className="btn-outlined"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                  >
+                    <Check className="w-4 h-4 mr-2" />
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Logo Edit Modal */}
       {editingLogoDojo && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setEditingLogoDojo(null)}
+        >
+          <div 
+            className="bg-white rounded-lg p-6 max-w-md w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-title-medium font-semibold text-gray-900">
                 Update Dojo Logo
@@ -283,8 +382,14 @@ const DojoAdminManagement: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {deletingDojo && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setDeletingDojo(null)}
+        >
+          <div 
+            className="bg-white rounded-lg p-6 max-w-md w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center mb-4">
               <AlertTriangle className="w-6 h-6 text-red-600 mr-3" />
               <h3 className="text-title-medium font-semibold text-gray-900">
