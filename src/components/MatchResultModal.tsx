@@ -66,6 +66,8 @@ const MatchResultModal: React.FC<MatchResultModalProps> = ({
   const [needsOvertime, setNeedsOvertime] = useState(false)
   const [overtimeData, setOvertimeData] = useState<OvertimeData | null>(null)
   const [loading, setLoading] = useState(false)
+  const [team1Lineup, setTeam1Lineup] = useState<(string | null)[]>(Array(7).fill(null))
+  const [team2Lineup, setTeam2Lineup] = useState<(string | null)[]>(Array(7).fill(null))
 
   // Initialize individual matches when modal opens or load existing match data
   useEffect(() => {
@@ -84,8 +86,8 @@ const MatchResultModal: React.FC<MatchResultModalProps> = ({
           
           existingMatches.push({
             setNumber: i + 1,
-            team1PlayerId: existingSet.team1PlayerId,
-            team2PlayerId: existingSet.team2PlayerId,
+            team1PlayerId: existingSet.team1PlayerId || '',
+            team2PlayerId: existingSet.team2PlayerId || '',
             team1Actions: existingSet.actions.filter(a => a.playerId === existingSet.team1PlayerId),
             team2Actions: existingSet.actions.filter(a => a.playerId === existingSet.team2PlayerId),
             result: existingSet.result === 'win' ? 
@@ -96,10 +98,26 @@ const MatchResultModal: React.FC<MatchResultModalProps> = ({
               'pending',
             timeLimit: 180,
             timeRemaining: existingSet.timeRemaining || 180,
-            isCompleted: existingSet.result && existingSet.result !== 'pending'
+            isCompleted: existingSet.result ? true : false
           })
         }
         setIndividualMatches(existingMatches)
+        
+        // Initialize lineups from existing match data
+        const newTeam1Lineup = Array(7).fill(null)
+        const newTeam2Lineup = Array(7).fill(null)
+        
+        existingMatches.forEach((match, index) => {
+          if (match.team1PlayerId && !match.team1PlayerId.startsWith('missing_')) {
+            newTeam1Lineup[index] = match.team1PlayerId
+          }
+          if (match.team2PlayerId && !match.team2PlayerId.startsWith('missing_')) {
+            newTeam2Lineup[index] = match.team2PlayerId
+          }
+        })
+        
+        setTeam1Lineup(newTeam1Lineup)
+        setTeam2Lineup(newTeam2Lineup)
         
         // Load existing overtime data if present
         if (match.overtime) {
@@ -137,6 +155,22 @@ const MatchResultModal: React.FC<MatchResultModalProps> = ({
         }
         setIndividualMatches(matches)
         
+        // Initialize lineups from match data
+        const newTeam1Lineup = Array(7).fill(null)
+        const newTeam2Lineup = Array(7).fill(null)
+        
+        matches.forEach((match, index) => {
+          if (match.team1PlayerId && !match.team1PlayerId.startsWith('missing_')) {
+            newTeam1Lineup[index] = match.team1PlayerId
+          }
+          if (match.team2PlayerId && !match.team2PlayerId.startsWith('missing_')) {
+            newTeam2Lineup[index] = match.team2PlayerId
+          }
+        })
+        
+        setTeam1Lineup(newTeam1Lineup)
+        setTeam2Lineup(newTeam2Lineup)
+        
         // Handle overtime state for fresh matches
         if (match.overtime) {
           setOvertimeData(match.overtime)
@@ -164,6 +198,25 @@ const MatchResultModal: React.FC<MatchResultModalProps> = ({
     }
     const allPlayers = [...team1.players, ...team2.players]
     return allPlayers.find(p => p.id === playerId)
+  }
+
+
+  // Update individual matches when lineup changes
+  const updateMatchesFromLineup = (teamId: string, lineup: (string | null)[]) => {
+    const updatedMatches = individualMatches.map((match, index) => {
+      if (teamId === team1.id) {
+        return {
+          ...match,
+          team1PlayerId: lineup[index] || `missing_team1_${index + 1}`
+        }
+      } else {
+        return {
+          ...match,
+          team2PlayerId: lineup[index] || `missing_team2_${index + 1}`
+        }
+      }
+    })
+    setIndividualMatches(updatedMatches)
   }
 
 
@@ -555,6 +608,7 @@ const MatchResultModal: React.FC<MatchResultModalProps> = ({
               ></div>
             </div>
           </div>
+
 
           {/* Individual Matches */}
           <div className="space-y-4">
@@ -1142,5 +1196,6 @@ const OvertimeSection: React.FC<OvertimeSectionProps> = ({
     </div>
   )
 }
+
 
 export default MatchResultModal
