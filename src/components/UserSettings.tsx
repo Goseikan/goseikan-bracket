@@ -12,7 +12,7 @@ import { KendoRank, Dojo, Team } from '../types'
 
 const UserSettings: React.FC = () => {
   const { user: currentUser, updateUserProfile } = useAuth()
-  const { dojos, teams, users, updateUser, syncTeamData } = useTournament()
+  const { dojos, teams, users, updateUser, syncTeamData, leaveTeam, createAndJoinTeam, joinExistingTeam } = useTournament()
   const [editingUserName, setEditingUserName] = useState(false)
   const [editingDateOfBirth, setEditingDateOfBirth] = useState(false)
   const [editingRank, setEditingRank] = useState(false)
@@ -24,6 +24,8 @@ const UserSettings: React.FC = () => {
   // Team/Dojo management state
   const [showJoinDojo, setShowJoinDojo] = useState(false)
   const [showJoinTeam, setShowJoinTeam] = useState(false)
+  const [showCreateTeam, setShowCreateTeam] = useState(false)
+  const [newTeamName, setNewTeamName] = useState('')
   const [dojoSearchQuery, setDojoSearchQuery] = useState('')
   const [teamSearchQuery, setTeamSearchQuery] = useState('')
   const [dojoSuggestions, setDojoSuggestions] = useState<Dojo[]>([])
@@ -187,26 +189,21 @@ const UserSettings: React.FC = () => {
     }
   }
 
-  // Handle leaving team (but staying in dojo)
+  // Handle leaving team (and auto-remove team if empty)
   const handleLeaveTeam = async () => {
-    if (!confirm('Are you sure you want to leave your team? You will remain in your dojo.')) {
+    if (!confirm('Are you sure you want to leave your team? You will remain in your dojo. If you are the last member, the team will be removed.')) {
       return
     }
 
     try {
-      const updatedData = {
-        teamId: undefined,
-        teamName: undefined
-      }
-      
-      await updateUser(currentUser.id, updatedData)
-      updateUserProfile(updatedData)
+      await leaveTeam(currentUser.id)
+      updateUserProfile({ teamId: '', teamName: undefined })
       setSaveError(null)
       setToast({ type: 'success', message: 'Successfully left team!' })
       setTimeout(() => setToast(null), 3000)
     } catch (error) {
       console.error('Failed to leave team:', error)
-      const errorMsg = 'Failed to leave team. Please try again.'
+      const errorMsg = error instanceof Error ? error.message : 'Failed to leave team. Please try again.'
       setSaveError(errorMsg)
       setToast({ type: 'error', message: errorMsg })
       setTimeout(() => setToast(null), 5000)
@@ -243,21 +240,9 @@ const UserSettings: React.FC = () => {
   const handleJoinTeam = async (team: Team) => {
     console.log('Attempting to join team:', team.name, 'Player count:', team.players.length, 'Players:', team.players)
     
-    if (team.players.length >= 7) {
-      setSaveError('Cannot join team: Team is full (7/7 members)')
-      return
-    }
-
     try {
-      const updatedData = {
-        teamId: team.id,
-        teamName: team.name,
-        dojoId: team.dojoId, // Ensure user is in the correct dojo
-        dojoName: dojos.find(d => d.id === team.dojoId)?.name
-      }
-      
-      await updateUser(currentUser.id, updatedData)
-      updateUserProfile(updatedData)
+      await joinExistingTeam(currentUser.id, team.id)
+      updateUserProfile({ teamId: team.id, teamName: team.name })
       setShowJoinTeam(false)
       setTeamSearchQuery('')
       setSaveError(null)
@@ -265,7 +250,36 @@ const UserSettings: React.FC = () => {
       setTimeout(() => setToast(null), 3000)
     } catch (error) {
       console.error('Failed to join team:', error)
-      const errorMsg = 'Failed to join team. Please try again.'
+      const errorMsg = error instanceof Error ? error.message : 'Failed to join team. Please try again.'
+      setSaveError(errorMsg)
+      setToast({ type: 'error', message: errorMsg })
+      setTimeout(() => setToast(null), 5000)
+    }
+  }
+
+  // Handle creating new team
+  const handleCreateTeam = async () => {
+    if (!newTeamName.trim()) {
+      setSaveError('Team name is required')
+      return
+    }
+
+    if (!userDojo) {
+      setSaveError('You must be in a dojo to create a team')
+      return
+    }
+
+    try {
+      const newTeam = await createAndJoinTeam(currentUser.id, newTeamName.trim(), userDojo.id)
+      updateUserProfile({ teamId: newTeam.id, teamName: newTeam.name })
+      setShowCreateTeam(false)
+      setNewTeamName('')
+      setSaveError(null)
+      setToast({ type: 'success', message: `Successfully created and joined ${newTeam.name}!` })
+      setTimeout(() => setToast(null), 3000)
+    } catch (error) {
+      console.error('Failed to create team:', error)
+      const errorMsg = error instanceof Error ? error.message : 'Failed to create team. Please try again.'
       setSaveError(errorMsg)
       setToast({ type: 'error', message: errorMsg })
       setTimeout(() => setToast(null), 5000)
@@ -614,15 +628,24 @@ const UserSettings: React.FC = () => {
             ) : userDojo ? (
               <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                 <p className="text-body-medium text-gray-600 mb-3">You are not currently on any team.</p>
-                {!showJoinTeam ? (
-                  <button
-                    onClick={() => setShowJoinTeam(true)}
-                    className="text-primary-600 hover:text-primary-800 text-sm flex items-center"
-                  >
-                    <UserPlus className="w-4 h-4 mr-1" />
-                    Join a Team
-                  </button>
-                ) : (
+                {!showJoinTeam && !showCreateTeam ? (
+                  <div className="flex space-x-4">
+                    <button
+                      onClick={() => setShowJoinTeam(true)}
+                      className="text-primary-600 hover:text-primary-800 text-sm flex items-center"
+                    >
+                      <UserPlus className="w-4 h-4 mr-1" />
+                      Join Existing Team
+                    </button>
+                    <button
+                      onClick={() => setShowCreateTeam(true)}
+                      className="text-green-600 hover:text-green-800 text-sm flex items-center"
+                    >
+                      <UserPlus className="w-4 h-4 mr-1" />
+                      Create New Team
+                    </button>
+                  </div>
+                ) : showJoinTeam ? (
                   <div className="space-y-3">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -664,7 +687,44 @@ const UserSettings: React.FC = () => {
                       Cancel
                     </button>
                   </div>
-                )}
+                ) : showCreateTeam ? (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">New Team Name</label>
+                      <input
+                        type="text"
+                        value={newTeamName}
+                        onChange={(e) => setNewTeamName(e.target.value)}
+                        placeholder="Enter team name"
+                        className="input w-full"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleCreateTeam()
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={handleCreateTeam}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm flex items-center"
+                        disabled={!newTeamName.trim()}
+                      >
+                        <CheckCircle className="w-4 h-4 mr-1" />
+                        Create Team
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowCreateTeam(false)
+                          setNewTeamName('')
+                        }}
+                        className="text-gray-600 hover:text-gray-800 text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             ) : (
               <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
