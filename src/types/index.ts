@@ -26,6 +26,7 @@ export interface User {
   email: string
   password: string // hashed
   kendoRank: KendoRank
+  auskfId: string // AUSKF membership ID
   createdAt: string
   updatedAt: string
 }
@@ -188,6 +189,7 @@ export interface AuthUser {
   teamName?: string
   dateOfBirth: string
   kendoRank: KendoRank
+  auskfId: string
 }
 
 export interface LoginCredentials {
@@ -201,8 +203,9 @@ export interface RegisterData {
   password: string
   dateOfBirth: string
   dojoName: string
-  teamName: string
+  teamName?: string // Made optional
   kendoRank: KendoRank
+  auskfId: string
 }
 
 /**

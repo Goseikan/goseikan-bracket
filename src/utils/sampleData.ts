@@ -302,6 +302,7 @@ const generateUsers = (): User[] => {
     teamId: "team_dojo_goseikan_1",
     role: "super_admin",
     kendoRank: "7 Dan",
+    auskfId: "ADMIN001",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   });
@@ -317,6 +318,7 @@ const generateUsers = (): User[] => {
     teamId: "team_dojo_macomb_kendo_dojo_1",
     role: "admin",
     kendoRank: "6 Dan",
+    auskfId: "ADMIN002",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   });
@@ -359,6 +361,7 @@ const generateUsers = (): User[] => {
         teamId: "", // Will be assigned when teams are created
         role: "participant",
         kendoRank: participant.rank,
+        auskfId: `${dojoData.abbreviation.toUpperCase()}${String(participantIndex + 1).padStart(3, "0")}`,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
