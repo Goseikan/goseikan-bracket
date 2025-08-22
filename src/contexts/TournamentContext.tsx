@@ -55,6 +55,9 @@ interface TournamentContextType extends TournamentState {
   getDojoById: (dojoId: string) => Dojo | null
   clearError: () => void
   syncTeamData: () => void
+  leaveTeam: (userId: string) => Promise<void>
+  createAndJoinTeam: (userId: string, teamName: string, dojoId: string) => Promise<Team>
+  joinExistingTeam: (userId: string, teamId: string) => Promise<void>
 }
 
 const TournamentContext = createContext<TournamentContextType | undefined>(undefined)
@@ -742,6 +745,232 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }
 
+  /**
+   * Leave current team - removes user from team and cleans up empty teams
+   */
+  const leaveTeam = async (userId: string): Promise<void> => {
+    const isDevelopment = import.meta.env.DEV || !import.meta.env.VITE_USE_DATABASE
+
+    if (isDevelopment) {
+      const users = JSON.parse(localStorage.getItem('users') || '[]')
+      const teams = JSON.parse(localStorage.getItem('teams') || '[]')
+      
+      // Find the user
+      const userIndex = users.findIndex((u: any) => u.id === userId)
+      if (userIndex === -1) {
+        throw new Error('User not found')
+      }
+      
+      const user = users[userIndex]
+      const oldTeamId = user.teamId
+      
+      // Remove user from team
+      users[userIndex] = {
+        ...user,
+        teamId: undefined,
+        teamName: undefined,
+        updatedAt: new Date().toISOString()
+      }
+      
+      // Update team's player list
+      const teamIndex = teams.findIndex((t: any) => t.id === oldTeamId)
+      if (teamIndex !== -1) {
+        teams[teamIndex] = {
+          ...teams[teamIndex],
+          players: teams[teamIndex].players.filter((p: any) => {
+            const playerId = typeof p === 'string' ? p : p.id
+            return playerId !== userId
+          })
+        }
+        
+        // Remove team if no players left
+        if (teams[teamIndex].players.length === 0) {
+          teams.splice(teamIndex, 1)
+        }
+      }
+      
+      // Save to localStorage
+      localStorage.setItem('users', JSON.stringify(users))
+      localStorage.setItem('teams', JSON.stringify(teams))
+      
+      // Update state
+      dispatch({ type: 'UPDATE_USER', payload: users[userIndex] })
+      dispatch({ type: 'LOAD_SUCCESS', payload: { teams } })
+    } else {
+      // API implementation would go here
+      throw new Error('API implementation not available')
+    }
+  }
+
+  /**
+   * Create a new team and join it
+   */
+  const createAndJoinTeam = async (userId: string, teamName: string, dojoId: string): Promise<Team> => {
+    const isDevelopment = import.meta.env.DEV || !import.meta.env.VITE_USE_DATABASE
+
+    if (isDevelopment) {
+      const users = JSON.parse(localStorage.getItem('users') || '[]')
+      const teams = JSON.parse(localStorage.getItem('teams') || '[]')
+      const dojos = JSON.parse(localStorage.getItem('dojos') || '[]')
+      
+      // Find the user and dojo
+      const userIndex = users.findIndex((u: any) => u.id === userId)
+      const dojo = dojos.find((d: any) => d.id === dojoId)
+      
+      if (userIndex === -1) {
+        throw new Error('User not found')
+      }
+      if (!dojo) {
+        throw new Error('Dojo not found')
+      }
+      
+      // Check if team name already exists in this dojo
+      const existingTeam = teams.find((t: any) => 
+        t.name.toLowerCase() === teamName.toLowerCase() && t.dojoId === dojoId
+      )
+      if (existingTeam) {
+        throw new Error('Team name already exists in this dojo')
+      }
+      
+      // Create new team
+      const newTeamRaw = {
+        id: `team_${Date.now()}`,
+        name: teamName,
+        dojoId: dojoId,
+        players: [userId], // Store as string array in localStorage
+        logo: generateTeamLogo(teamName, dojo.name),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+      
+      // Leave current team if any
+      const user = users[userIndex]
+      if (user.teamId) {
+        await leaveTeam(userId)
+        // Reload updated data after leaving team
+        const updatedUsers = JSON.parse(localStorage.getItem('users') || '[]')
+        const updatedUserIndex = updatedUsers.findIndex((u: any) => u.id === userId)
+        users[updatedUserIndex] = updatedUsers[updatedUserIndex]
+      }
+      
+      // Update user to join new team
+      users[userIndex] = {
+        ...users[userIndex],
+        teamId: newTeamRaw.id,
+        teamName: newTeamRaw.name,
+        updatedAt: new Date().toISOString()
+      }
+      
+      // Add team to teams list
+      teams.push(newTeamRaw)
+      
+      // Save to localStorage
+      localStorage.setItem('users', JSON.stringify(users))
+      localStorage.setItem('teams', JSON.stringify(teams))
+      
+      // Create enriched team with full user objects for return/state
+      const enrichedTeam: Team = {
+        ...newTeamRaw,
+        players: [users[userIndex]] // Convert to User object for interface compliance
+      }
+      
+      // Update state
+      dispatch({ type: 'UPDATE_USER', payload: users[userIndex] })
+      dispatch({ type: 'ADD_TEAM', payload: enrichedTeam })
+      
+      return enrichedTeam
+    } else {
+      // API implementation would go here
+      throw new Error('API implementation not available')
+    }
+  }
+
+  /**
+   * Join an existing team
+   */
+  const joinExistingTeam = async (userId: string, teamId: string): Promise<void> => {
+    const isDevelopment = import.meta.env.DEV || !import.meta.env.VITE_USE_DATABASE
+
+    if (isDevelopment) {
+      const users = JSON.parse(localStorage.getItem('users') || '[]')
+      const teams = JSON.parse(localStorage.getItem('teams') || '[]')
+      
+      // Find the user and team
+      const userIndex = users.findIndex((u: any) => u.id === userId)
+      const teamIndex = teams.findIndex((t: any) => t.id === teamId)
+      
+      if (userIndex === -1) {
+        throw new Error('User not found')
+      }
+      if (teamIndex === -1) {
+        throw new Error('Team not found')
+      }
+      
+      const team = teams[teamIndex]
+      
+      // Check if team is full (max 7 players)
+      if (team.players.length >= 7) {
+        throw new Error('Team is full (maximum 7 players)')
+      }
+      
+      // Check if user is already in this team
+      const isAlreadyMember = team.players.some((p: any) => {
+        const playerId = typeof p === 'string' ? p : p.id
+        return playerId === userId
+      })
+      if (isAlreadyMember) {
+        throw new Error('User is already a member of this team')
+      }
+      
+      // Leave current team if any
+      const user = users[userIndex]
+      if (user.teamId) {
+        await leaveTeam(userId)
+        // Reload updated data after leaving team
+        const updatedUsers = JSON.parse(localStorage.getItem('users') || '[]')
+        const updatedTeams = JSON.parse(localStorage.getItem('teams') || '[]')
+        const updatedUserIndex = updatedUsers.findIndex((u: any) => u.id === userId)
+        const updatedTeamIndex = updatedTeams.findIndex((t: any) => t.id === teamId)
+        
+        users[updatedUserIndex] = updatedUsers[updatedUserIndex]
+        teams[updatedTeamIndex] = updatedTeams[updatedTeamIndex]
+      }
+      
+      // Update user to join team
+      users[userIndex] = {
+        ...users[userIndex],
+        teamId: team.id,
+        teamName: team.name,
+        updatedAt: new Date().toISOString()
+      }
+      
+      // Add user to team's player list
+      const updatedTeamRaw = {
+        ...teams[teamIndex],
+        players: [...teams[teamIndex].players, userId],
+        updatedAt: new Date().toISOString()
+      }
+      teams[teamIndex] = updatedTeamRaw
+      
+      // Save to localStorage
+      localStorage.setItem('users', JSON.stringify(users))
+      localStorage.setItem('teams', JSON.stringify(teams))
+      
+      // Create enriched team with full user objects for state
+      const enrichedTeam: Team = {
+        ...updatedTeamRaw,
+        players: users.filter((u: any) => updatedTeamRaw.players.includes(u.id))
+      }
+      
+      // Update state
+      dispatch({ type: 'UPDATE_USER', payload: users[userIndex] })
+      dispatch({ type: 'UPDATE_TEAM', payload: enrichedTeam })
+    } else {
+      // API implementation would go here
+      throw new Error('API implementation not available')
+    }
+  }
+
   const value: TournamentContextType = {
     ...state,
     loadTournamentData,
@@ -761,7 +990,10 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     getTeamById,
     getDojoById,
     clearError,
-    syncTeamData
+    syncTeamData,
+    leaveTeam,
+    createAndJoinTeam,
+    joinExistingTeam
   }
 
   return (
