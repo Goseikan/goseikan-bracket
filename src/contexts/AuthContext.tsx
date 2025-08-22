@@ -122,7 +122,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           dojoId: user.dojoId,
           teamId: user.teamId,
           dateOfBirth: user.dateOfBirth,
-          kendoRank: user.kendoRank
+          kendoRank: user.kendoRank,
+          auskfId: user.auskfId
         }
 
         // Store in localStorage for persistence
@@ -145,7 +146,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           dojoId: result.data.dojoId,
           teamId: result.data.teamId || '',
           dateOfBirth: result.data.dateOfBirth,
-          kendoRank: result.data.kendoRank
+          kendoRank: result.data.kendoRank,
+          auskfId: result.data.auskfId
         }
 
         // Store in localStorage for persistence
@@ -189,20 +191,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         dojos.push(dojo)
       }
 
-      // Find or create team within the dojo
-      let team = teams.find((t: any) => 
-        t.name.toLowerCase() === data.teamName.toLowerCase() && t.dojoId === dojo.id
-      )
-      if (!team) {
-        team = {
-          id: `team_${Date.now()}`,
-          name: data.teamName,
-          dojoId: dojo.id,
-          players: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+      // Find or create team within the dojo (if team name provided)
+      let team = null
+      if (data.teamName && data.teamName.trim()) {
+        team = teams.find((t: any) => 
+          t.name.toLowerCase() === data.teamName!.toLowerCase() && t.dojoId === dojo.id
+        )
+        if (!team) {
+          team = {
+            id: `team_${Date.now()}`,
+            name: data.teamName,
+            dojoId: dojo.id,
+            players: [],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+          teams.push(team)
         }
-        teams.push(team)
       }
 
       // Create new user
@@ -213,15 +218,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password: data.password, // In real app, this would be hashed
         dateOfBirth: data.dateOfBirth,
         dojoId: dojo.id,
-        teamId: team.id,
+        teamId: team?.id,
         role: 'participant' as const,
         kendoRank: data.kendoRank,
+        auskfId: data.auskfId,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }
 
-      // Update team players array
-      team.players.push(newUser.id)
+      // Update team players array if team exists
+      if (team) {
+        team.players.push(newUser.id)
+      }
 
       // Save to localStorage
       users.push(newUser)
@@ -236,9 +244,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: newUser.email,
         role: newUser.role,
         dojoId: newUser.dojoId,
-        teamId: newUser.teamId,
+        teamId: newUser.teamId || '',
         dateOfBirth: newUser.dateOfBirth,
-        kendoRank: newUser.kendoRank
+        kendoRank: newUser.kendoRank,
+        auskfId: newUser.auskfId
       }
 
       // Store in localStorage and update state

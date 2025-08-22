@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useTournament } from '../contexts/TournamentContext'
@@ -24,7 +24,8 @@ const RegisterPage: React.FC = () => {
     dateOfBirth: '',
     dojoName: '',
     teamName: '',
-    kendoRank: 'Mudansha'
+    kendoRank: 'Mudansha',
+    auskfId: ''
   })
   
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -36,35 +37,66 @@ const RegisterPage: React.FC = () => {
   const [dojoSuggestions, setDojoSuggestions] = useState<string[]>([])
   const [teamSuggestions, setTeamSuggestions] = useState<string[]>([])
   const [selectedDojo, setSelectedDojo] = useState<string>('')
+  const [showDojoSuggestions, setShowDojoSuggestions] = useState(false)
+  const [showTeamSuggestions, setShowTeamSuggestions] = useState(false)
+
+  // Refs for click-away functionality
+  const dojoDropdownRef = useRef<HTMLDivElement>(null)
+  const teamDropdownRef = useRef<HTMLDivElement>(null)
 
   // Clear auth error when component mounts
   useEffect(() => {
     clearError()
   }, [])
 
+  // Handle click outside to close dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dojoDropdownRef.current && !dojoDropdownRef.current.contains(event.target as Node)) {
+        setShowDojoSuggestions(false)
+      }
+      if (teamDropdownRef.current && !teamDropdownRef.current.contains(event.target as Node)) {
+        setShowTeamSuggestions(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
+
   // Update dojo suggestions based on input
   useEffect(() => {
-    if (formData.dojoName.length > 1) {
+    if (formData.dojoName.length > 0) {
       const suggestions = dojos
         .filter(dojo => dojo.name.toLowerCase().includes(formData.dojoName.toLowerCase()))
         .map(dojo => dojo.name)
         .slice(0, 5)
       setDojoSuggestions(suggestions)
     } else {
-      setDojoSuggestions([])
+      // Show all dojos when field is empty but focused
+      const allDojos = dojos.map(dojo => dojo.name).slice(0, 5)
+      setDojoSuggestions(allDojos)
     }
   }, [formData.dojoName, dojos])
 
   // Update team suggestions based on selected dojo
   useEffect(() => {
     const dojo = dojos.find(d => d.name === selectedDojo)
-    if (dojo && formData.teamName.length > 0) {
+    if (dojo) {
       const dojoTeams = teams.filter(team => team.dojoId === dojo.id)
-      const suggestions = dojoTeams
-        .filter(team => team.name.toLowerCase().includes(formData.teamName.toLowerCase()))
-        .map(team => team.name)
-        .slice(0, 5)
-      setTeamSuggestions(suggestions)
+      if (formData.teamName && formData.teamName.length > 0) {
+        const suggestions = dojoTeams
+          .filter(team => team.name.toLowerCase().includes(formData.teamName!.toLowerCase()))
+          .map(team => team.name)
+          .slice(0, 5)
+        setTeamSuggestions(suggestions)
+      } else {
+        // Show all teams in dojo when field is empty but focused
+        const allTeams = dojoTeams.map(team => team.name).slice(0, 5)
+        setTeamSuggestions(allTeams)
+      }
     } else {
       setTeamSuggestions([])
     }
@@ -95,12 +127,14 @@ const RegisterPage: React.FC = () => {
   const handleDojoSelect = (dojoName: string) => {
     handleInputChange('dojoName', dojoName)
     setDojoSuggestions([])
+    setShowDojoSuggestions(false)
   }
 
   // Handle team suggestion selection  
   const handleTeamSelect = (teamName: string) => {
     handleInputChange('teamName', teamName)
     setTeamSuggestions([])
+    setShowTeamSuggestions(false)
   }
 
   // Validate form
@@ -135,13 +169,15 @@ const RegisterPage: React.FC = () => {
       errors.dojoName = 'Dojo name is required'
     }
 
-    if (!formData.teamName.trim()) {
-      errors.teamName = 'Team name is required'
+    if (!formData.auskfId.trim()) {
+      errors.auskfId = 'AUSKF ID is required'
     }
 
     if (!formData.kendoRank) {
       errors.kendoRank = 'Kendo rank is required'
     }
+
+    // Team name is now optional - no validation required
 
     setFormErrors(errors)
     return Object.keys(errors).length === 0
@@ -248,6 +284,24 @@ const RegisterPage: React.FC = () => {
               )}
             </div>
 
+            {/* AUSKF ID */}
+            <div className="input-field">
+              <label className="block text-label-large font-medium text-gray-700 mb-2">
+                AUSKF ID <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.auskfId}
+                onChange={(e) => handleInputChange('auskfId', e.target.value)}
+                className={`input ${formErrors.auskfId ? 'border-red-500 focus:ring-red-500' : ''}`}
+                placeholder="Enter your AUSKF membership ID"
+                disabled={loading}
+              />
+              {formErrors.auskfId && (
+                <p className="mt-2 text-body-small text-red-600">{formErrors.auskfId}</p>
+              )}
+            </div>
+
             {/* Kendo Rank */}
             <RankSelector
               value={formData.kendoRank}
@@ -257,7 +311,7 @@ const RegisterPage: React.FC = () => {
             />
 
             {/* Dojo Name */}
-            <div className="input-field relative">
+            <div className="input-field relative" ref={dojoDropdownRef}>
               <label className="block text-label-large font-medium text-gray-700 mb-2">
                 Dojo <span className="text-red-500">*</span>
               </label>
@@ -265,13 +319,16 @@ const RegisterPage: React.FC = () => {
                 type="text"
                 value={formData.dojoName}
                 onChange={(e) => handleInputChange('dojoName', e.target.value)}
+                onFocus={() => {
+                  setShowDojoSuggestions(true)
+                }}
                 className={`input ${formErrors.dojoName ? 'border-red-500 focus:ring-red-500' : ''}`}
                 placeholder="Start typing your dojo name"
                 disabled={loading}
               />
               
               {/* Dojo Suggestions */}
-              {dojoSuggestions.length > 0 && (
+              {showDojoSuggestions && dojoSuggestions.length > 0 && (
                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
                   {dojoSuggestions.map((suggestion, index) => (
                     <button
@@ -301,21 +358,26 @@ const RegisterPage: React.FC = () => {
             </div>
 
             {/* Team Name */}
-            <div className="input-field relative">
+            <div className="input-field relative" ref={teamDropdownRef}>
               <label className="block text-label-large font-medium text-gray-700 mb-2">
-                Team <span className="text-red-500">*</span>
+                Team <span className="text-gray-500">(Optional)</span>
               </label>
               <input
                 type="text"
                 value={formData.teamName}
                 onChange={(e) => handleInputChange('teamName', e.target.value)}
+                onFocus={() => {
+                  if (selectedDojo) {
+                    setShowTeamSuggestions(true)
+                  }
+                }}
                 className={`input ${formErrors.teamName ? 'border-red-500 focus:ring-red-500' : ''}`}
-                placeholder="Start typing your team name"
+                placeholder="Start typing your team name (optional)"
                 disabled={loading || !selectedDojo}
               />
               
               {/* Team Suggestions */}
-              {teamSuggestions.length > 0 && (
+              {showTeamSuggestions && teamSuggestions.length > 0 && (
                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
                   {teamSuggestions.map((suggestion, index) => (
                     <button
@@ -327,10 +389,10 @@ const RegisterPage: React.FC = () => {
                       {suggestion}
                     </button>
                   ))}
-                  {!teamSuggestions.includes(formData.teamName) && formData.teamName.length > 0 && (
+                  {formData.teamName && !teamSuggestions.includes(formData.teamName) && formData.teamName.length > 0 && (
                     <button
                       type="button"
-                      onClick={() => handleTeamSelect(formData.teamName)}
+                      onClick={() => handleTeamSelect(formData.teamName!)}
                       className="w-full px-4 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none text-primary-600 border-t border-gray-200"
                     >
                       Create new team: "{formData.teamName}"
