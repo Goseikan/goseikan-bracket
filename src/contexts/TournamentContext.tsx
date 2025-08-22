@@ -54,6 +54,7 @@ interface TournamentContextType extends TournamentState {
   getTeamById: (teamId: string) => Team | null
   getDojoById: (dojoId: string) => Dojo | null
   clearError: () => void
+  syncTeamData: () => void
 }
 
 const TournamentContext = createContext<TournamentContextType | undefined>(undefined)
@@ -578,14 +579,20 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       
       if (isDevelopment) {
         // If team is changing, update team player lists
-        if (updates.teamId && updates.teamId !== user.teamId) {
+        if ('teamId' in updates && updates.teamId !== user.teamId) {
           // Remove from old team
           if (user.teamId) {
             const oldTeam = getTeamById(user.teamId)
             if (oldTeam) {
+              // Handle both User objects and string IDs in players array
+              const filteredPlayers = oldTeam.players.filter(p => {
+                const playerId = typeof p === 'string' ? p : p.id
+                return playerId !== userId
+              })
+              
               const updatedOldTeam = {
                 ...oldTeam,
-                players: oldTeam.players.filter(p => p.id !== userId)
+                players: filteredPlayers
               }
               const updatedTeams = state.teams.map(t => t.id === oldTeam.id ? updatedOldTeam : t)
               localStorage.setItem('teams', JSON.stringify(updatedTeams))
@@ -593,22 +600,42 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             }
           }
           
-          // Add to new team
-          const newTeam = getTeamById(updates.teamId)
-          if (newTeam) {
-            const updatedNewTeam = {
-              ...newTeam,
-              players: [...newTeam.players.filter(p => p.id !== userId), updatedUser]
+          // Add to new team (only if teamId is not undefined)
+          if (updates.teamId) {
+            const newTeam = getTeamById(updates.teamId)
+            if (newTeam) {
+              // Handle both User objects and string IDs in players array
+              const filteredPlayers = newTeam.players.filter(p => {
+                const playerId = typeof p === 'string' ? p : p.id
+                return playerId !== userId
+              })
+              
+              const updatedNewTeam = {
+                ...newTeam,
+                players: [...filteredPlayers, updatedUser]
+              }
+              const updatedTeams = state.teams.map(t => t.id === newTeam.id ? updatedNewTeam : t)
+              localStorage.setItem('teams', JSON.stringify(updatedTeams))
+              dispatch({ type: 'UPDATE_TEAM', payload: updatedNewTeam })
             }
-            const updatedTeams = state.teams.map(t => t.id === newTeam.id ? updatedNewTeam : t)
-            localStorage.setItem('teams', JSON.stringify(updatedTeams))
-            dispatch({ type: 'UPDATE_TEAM', payload: updatedNewTeam })
           }
         }
         
         // Update localStorage
         const updatedUsers = state.users.map(u => u.id === userId ? updatedUser : u)
         localStorage.setItem('users', JSON.stringify(updatedUsers))
+        
+        // Ensure all teams have synchronized player lists
+        const currentTeams = JSON.parse(localStorage.getItem('teams') || '[]')
+        const synchronizedTeams = currentTeams.map((team: any) => ({
+          ...team,
+          players: team.players.filter((player: any) => {
+            const playerId = typeof player === 'string' ? player : player.id
+            const playerData = updatedUsers.find(u => u.id === playerId)
+            return playerData && playerData.teamId === team.id
+          })
+        }))
+        localStorage.setItem('teams', JSON.stringify(synchronizedTeams))
       } else {
         // Update via API
         const result = await userAPI.update(userId, updates)
@@ -619,6 +646,12 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       
       // Dispatch to state
       dispatch({ type: 'UPDATE_USER', payload: updatedUser })
+      
+      // Force reload of synchronized team data
+      if (isDevelopment) {
+        const teams = JSON.parse(localStorage.getItem('teams') || '[]')
+        dispatch({ type: 'LOAD_SUCCESS', payload: { teams } })
+      }
     } catch (error) {
       console.error('Failed to update user:', error)
       throw error
@@ -640,9 +673,15 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         if (user.teamId) {
           const team = getTeamById(user.teamId)
           if (team) {
+            // Handle both User objects and string IDs in players array
+            const filteredPlayers = team.players.filter(p => {
+              const playerId = typeof p === 'string' ? p : p.id
+              return playerId !== userId
+            })
+            
             const updatedTeam = {
               ...team,
-              players: team.players.filter(p => p.id !== userId)
+              players: filteredPlayers
             }
             const updatedTeams = state.teams.map(t => t.id === team.id ? updatedTeam : t)
             localStorage.setItem('teams', JSON.stringify(updatedTeams))
@@ -676,6 +715,33 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     dispatch({ type: 'CLEAR_ERROR' })
   }
 
+  /**
+   * Synchronize team data to fix any inconsistencies between user assignments and team player lists
+   */
+  const syncTeamData = (): void => {
+    const isDevelopment = import.meta.env.DEV || !import.meta.env.VITE_USE_DATABASE
+    
+    if (isDevelopment) {
+      const users = JSON.parse(localStorage.getItem('users') || '[]')
+      const teams = JSON.parse(localStorage.getItem('teams') || '[]')
+      
+      // Clean up team player lists to match user assignments
+      const synchronizedTeams = teams.map((team: any) => ({
+        ...team,
+        players: team.players.filter((player: any) => {
+          const playerId = typeof player === 'string' ? player : player.id
+          const playerData = users.find((u: any) => u.id === playerId)
+          return playerData && playerData.teamId === team.id
+        })
+      }))
+      
+      localStorage.setItem('teams', JSON.stringify(synchronizedTeams))
+      dispatch({ type: 'LOAD_SUCCESS', payload: { teams: synchronizedTeams } })
+      
+      console.log('Team data synchronized - removed orphaned player references')
+    }
+  }
+
   const value: TournamentContextType = {
     ...state,
     loadTournamentData,
@@ -694,7 +760,8 @@ export const TournamentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     getUserById,
     getTeamById,
     getDojoById,
-    clearError
+    clearError,
+    syncTeamData
   }
 
   return (

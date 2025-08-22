@@ -9,14 +9,15 @@ import TeamManagement from '../components/TeamManagement'
 import { Settings, Users, Trophy, Monitor, BarChart3, Building, UserCheck } from 'lucide-react'
 
 /**
- * AdminPage component - Tournament administration interface
- * Provides admin controls for tournament management
+ * AdminPage component - Registration administration interface
+ * REGISTRATION-ONLY MODE: Provides admin controls for registration management
+ * Tournament features temporarily disabled. See backups/tournament-features/ for restoration.
  */
 
 const AdminPage: React.FC = () => {
   const { user } = useAuth()
   const { tournament, teams, dojos, users } = useTournament()
-  const [activeTab, setActiveTab] = useState<'tournament' | 'courts' | 'users' | 'dojos' | 'teams'>('tournament')
+  const [activeTab, setActiveTab] = useState<'users' | 'dojos' | 'teams'>('users')
 
   // Calculate statistics
   const stats = {
@@ -33,21 +34,21 @@ const AdminPage: React.FC = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-display-small font-bold text-gray-900 mb-2">
-            Tournament Administration
+            Registration Administration
           </h1>
           <p className="text-body-large text-gray-600">
-            Welcome back, {user?.fullName}. Manage tournament settings and progression.
+            Welcome back, {user?.fullName}. Manage registrations, users, and teams.
           </p>
         </div>
 
-        {/* Statistics Overview */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        {/* Registration Statistics Overview */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="card p-4 text-center">
             <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-2">
               <Users className="w-5 h-5 text-primary-600" />
             </div>
             <div className="text-title-large font-bold text-gray-900">{stats.totalUsers}</div>
-            <div className="text-body-small text-gray-600">Total Users</div>
+            <div className="text-body-small text-gray-600">Total Registrations</div>
           </div>
           
           <div className="card p-4 text-center">
@@ -60,7 +61,7 @@ const AdminPage: React.FC = () => {
           
           <div className="card p-4 text-center">
             <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-              <Settings className="w-5 h-5 text-green-600" />
+              <Building className="w-5 h-5 text-green-600" />
             </div>
             <div className="text-title-large font-bold text-gray-900">{stats.totalDojos}</div>
             <div className="text-body-small text-gray-600">Dojos</div>
@@ -73,21 +74,14 @@ const AdminPage: React.FC = () => {
             <div className="text-title-large font-bold text-gray-900">{stats.participantUsers}</div>
             <div className="text-body-small text-gray-600">Participants</div>
           </div>
-          
-          <div className="card p-4 text-center">
-            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2">
-              <Monitor className="w-5 h-5 text-gray-600" />
-            </div>
-            <div className="text-title-large font-bold text-gray-900">{tournament?.courts.length || 0}</div>
-            <div className="text-body-small text-gray-600">Courts</div>
-          </div>
         </div>
 
         {/* Tab Navigation */}
         <div className="mb-8">
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8 overflow-x-auto">
-              <button
+              {/* Tournament and Court tabs temporarily disabled for registration-only focus */}
+              {/* <button
                 onClick={() => setActiveTab('tournament')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                   activeTab === 'tournament'
@@ -108,7 +102,7 @@ const AdminPage: React.FC = () => {
               >
                 <Monitor className="w-5 h-5 inline mr-2" />
                 Courts
-              </button>
+              </button> */}
               <button
                 onClick={() => setActiveTab('users')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
@@ -146,32 +140,18 @@ const AdminPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Tab Content */}
+        {/* Tab Content - Registration Management Only */}
         <div className="mb-8">
-          {activeTab === 'tournament' && <AdminControls />}
-          {activeTab === 'courts' && <CourtManagement />}
+          {/* Tournament and Court management temporarily disabled */}
+          {/* {activeTab === 'tournament' && <AdminControls />} */}
+          {/* {activeTab === 'courts' && <CourtManagement />} */}
           {activeTab === 'users' && <UserManagement />}
           {activeTab === 'dojos' && <DojoManagement />}
           {activeTab === 'teams' && <TeamManagement />}
         </div>
 
-        {/* Admin Functions Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="card p-6 text-center">
-            <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Settings className="w-6 h-6 text-primary-600" />
-            </div>
-            <h3 className="text-title-medium font-semibold text-gray-900 mb-2">
-              Tournament Settings
-            </h3>
-            <p className="text-body-small text-gray-600 mb-4">
-              Configure tournament parameters and rules
-            </p>
-            <button className="btn-outlined w-full" disabled>
-              Coming Soon
-            </button>
-          </div>
-
+        {/* Registration Management Quick Actions */}
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
           <div className="card p-6 text-center">
             <div className="w-12 h-12 bg-accent-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Users className="w-6 h-6 text-accent-600" />
@@ -180,99 +160,111 @@ const AdminPage: React.FC = () => {
               User Management
             </h3>
             <p className="text-body-small text-gray-600 mb-4">
-              Manage participants and team assignments
+              Manage registered participants and their information
             </p>
-            <button className="btn-outlined w-full" disabled>
-              Coming Soon
+            <button 
+              onClick={() => setActiveTab('users')}
+              className="btn-filled w-full"
+            >
+              Manage Users
             </button>
           </div>
 
           <div className="card p-6 text-center">
             <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Trophy className="w-6 h-6 text-green-600" />
+              <Building className="w-6 h-6 text-green-600" />
             </div>
             <h3 className="text-title-medium font-semibold text-gray-900 mb-2">
-              Match Management
+              Dojo Management
             </h3>
             <p className="text-body-small text-gray-600 mb-4">
-              View and manage individual matches
+              Organize and manage dojo registrations
             </p>
-            <button className="btn-outlined w-full" disabled>
-              Coming Soon
+            <button 
+              onClick={() => setActiveTab('dojos')}
+              className="btn-filled w-full"
+            >
+              Manage Dojos
             </button>
           </div>
 
           <div className="card p-6 text-center">
-            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Monitor className="w-6 h-6 text-gray-600" />
+            <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Trophy className="w-6 h-6 text-primary-600" />
             </div>
             <h3 className="text-title-medium font-semibold text-gray-900 mb-2">
-              Court Management
+              Team Management
             </h3>
             <p className="text-body-small text-gray-600 mb-4">
-              Monitor matches and scoring in real-time
+              View and organize team compositions
             </p>
-            <button className="btn-outlined w-full" disabled>
-              Coming Soon
+            <button 
+              onClick={() => setActiveTab('teams')}
+              className="btn-filled w-full"
+            >
+              Manage Teams
             </button>
           </div>
         </div>
 
-        {/* Development Status */}
+        {/* Registration-Only Mode Status */}
         <div className="card p-6">
           <h2 className="text-title-large font-semibold text-gray-900 mb-4">
-            Development Status
+            Current Mode: Registration Collection
           </h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <h3 className="text-title-medium font-medium text-gray-900">Completed Features</h3>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
-                <span className="text-body-medium text-gray-900">User Registration & Authentication</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
-                <span className="text-body-medium text-gray-900">Sample Data Generation (Michigan Cup)</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
-                <span className="text-body-medium text-gray-900">Dojo & Team Management</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
-                <span className="text-body-medium text-gray-900">Kendo Rank System</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
-                <span className="text-body-medium text-gray-900">Seed Group Generation</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
-                <span className="text-body-medium text-gray-900">Tournament Bracket Visualization</span>
-              </div>
+          <div className="space-y-6">
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h3 className="text-title-medium font-medium text-blue-900 mb-2">
+                ℹ️ Registration-Only Mode Active
+              </h3>
+              <p className="text-body-medium text-blue-800 mb-3">
+                The application is currently focused on collecting tournament registrations. 
+                Tournament features (brackets, matches, courts) are temporarily disabled.
+              </p>
+              <p className="text-body-small text-blue-700">
+                Tournament features can be restored using the backups in <code>backups/tournament-features/</code>
+              </p>
             </div>
             
-            <div className="space-y-3">
-              <h3 className="text-title-medium font-medium text-gray-900">In Development</h3>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-yellow-500 rounded-full mr-3"></div>
-                <span className="text-body-medium text-gray-900">Round-robin Match Simulation</span>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <h3 className="text-title-medium font-medium text-gray-900">Active Features</h3>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
+                  <span className="text-body-medium text-gray-900">User Registration & Authentication</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
+                  <span className="text-body-medium text-gray-900">Dojo & Team Management</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
+                  <span className="text-body-medium text-gray-900">Kendo Rank System</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
+                  <span className="text-body-medium text-gray-900">Registration Dashboard</span>
+                </div>
               </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
-                <span className="text-body-medium text-gray-900">Double Elimination Bracket</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-yellow-500 rounded-full mr-3"></div>
-                <span className="text-body-medium text-gray-900">Court Management System</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-yellow-500 rounded-full mr-3"></div>
-                <span className="text-body-medium text-gray-900">Real-time Scoring (Men/Kote/Tsuki/Do/Hansoku)</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-yellow-500 rounded-full mr-3"></div>
-                <span className="text-body-medium text-gray-900">Public Court Display</span>
+              
+              <div className="space-y-3">
+                <h3 className="text-title-medium font-medium text-gray-900">Temporarily Disabled</h3>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-gray-400 rounded-full mr-3"></div>
+                  <span className="text-body-medium text-gray-600">Tournament Bracket Visualization</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-gray-400 rounded-full mr-3"></div>
+                  <span className="text-body-medium text-gray-600">Match Management & Scoring</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-gray-400 rounded-full mr-3"></div>
+                  <span className="text-body-medium text-gray-600">Court Management System</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-gray-400 rounded-full mr-3"></div>
+                  <span className="text-body-medium text-gray-600">Public Tournament Display</span>
+                </div>
               </div>
             </div>
           </div>
