@@ -15,6 +15,9 @@ import {
 /**
  * Navigation component with Material Design 3 styling
  * Responsive mobile-first navigation with authentication-aware menu items
+ * 
+ * REGISTRATION-ONLY MODE: Tournament navigation items are temporarily disabled
+ * to focus on registration collection. See backups/tournament-features/ for restoration.
  */
 
 const Navigation: React.FC = () => {
@@ -40,12 +43,15 @@ const Navigation: React.FC = () => {
     return location.pathname === path;
   };
 
-  // Navigation items based on authentication state
+  // Navigation items based on authentication state - REGISTRATION FOCUS MODE
   const getNavItems = () => {
+    // Registration-focused public items (tournament features disabled)
     const publicItems = [
       { label: "Home", path: "/", icon: Trophy },
-      { label: "Bracket", path: "/bracket", icon: Sword },
-      { label: "Participants", path: "/participants", icon: Users },
+      { label: "Registrants", path: "/search", icon: Users },
+      // Tournament routes temporarily disabled for registration-only focus
+      // { label: "Bracket", path: "/bracket", icon: Sword },
+      // { label: "Participants", path: "/participants", icon: Users },
     ];
 
     if (!user) {
