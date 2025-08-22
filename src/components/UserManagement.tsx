@@ -3,7 +3,7 @@ import { useTournament } from '../contexts/TournamentContext'
 import { useAuth } from '../contexts/AuthContext'
 import { User, Dojo, Team, KendoRank } from '../types'
 import { getRankBadgeClass, KENDO_RANKS } from '../utils/kendoRanks'
-import { Trash2, Edit3, UserCheck, AlertTriangle, X, Check, Search } from 'lucide-react'
+import { Trash2, Edit3, UserCheck, AlertTriangle, X, Check, Search, CheckCircle } from 'lucide-react'
 
 /**
  * UserManagement component - Admin interface for managing users
@@ -11,7 +11,7 @@ import { Trash2, Edit3, UserCheck, AlertTriangle, X, Check, Search } from 'lucid
  */
 
 const UserManagement: React.FC = () => {
-  const { users, dojos, teams, updateUser, deleteUser } = useTournament()
+  const { users, dojos, teams, updateUser, deleteUser, syncTeamData } = useTournament()
   const { user: currentUser, isSuperAdmin } = useAuth()
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [deletingUser, setDeletingUser] = useState<User | null>(null)
@@ -27,6 +27,9 @@ const UserManagement: React.FC = () => {
   const [showTeamSuggestions, setShowTeamSuggestions] = useState(false)
   const [selectedDojo, setSelectedDojo] = useState<Dojo | null>(null)
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null)
+  
+  // Toast notifications
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
   // Check if user can be edited by current user
   const canEditUser = (user: User): boolean => {
@@ -86,7 +89,8 @@ const UserManagement: React.FC = () => {
       kendoRank: user.kendoRank,
       dateOfBirth: user.dateOfBirth,
       dojoId: user.dojoId,
-      teamId: user.teamId
+      teamId: user.teamId,
+      role: user.role
     })
     
     // Set initial dojo and team
@@ -121,15 +125,59 @@ const UserManagement: React.FC = () => {
     if (!editingUser) return
 
     try {
-      await updateUser(editingUser.id, {
+      // Prepare updated user data
+      const updatedData = {
         ...editingUser,
         ...editForm,
         updatedAt: new Date().toISOString()
-      })
+      }
+
+      // Handle dojo/team removal logic
+      if (editForm.dojoId === undefined) {
+        // Note: dojoId is required in User type, so we can't actually set it to undefined
+        // This case might need special handling or the User type needs to be updated
+        console.warn('Attempting to remove required dojoId - this may cause issues')
+      } else if (editForm.teamId === undefined && editForm.dojoId) {
+        // If only team is removed but dojo remains
+        updatedData.teamId = undefined
+        updatedData.teamName = undefined
+      } else {
+        // Update dojo/team names if they exist
+        const selectedDojoData = dojos.find(d => d.id === editForm.dojoId)
+        const selectedTeamData = teams.find(t => t.id === editForm.teamId)
+        
+        if (selectedDojoData) {
+          updatedData.dojoName = selectedDojoData.name
+        }
+        if (selectedTeamData) {
+          updatedData.teamName = selectedTeamData.name
+        }
+      }
+
+      await updateUser(editingUser.id, updatedData)
+      
+      // Sync team data to ensure consistency
+      syncTeamData()
+      
+      // Show success toast
+      setToast({ type: 'success', message: `${updatedData.fullName} updated successfully!` })
+      
+      // Clear form
       setEditingUser(null)
       setEditForm({})
+      
+      // Auto-hide toast after 3 seconds
+      setTimeout(() => setToast(null), 3000)
+      
     } catch (error) {
       console.error('Failed to update user:', error)
+      
+      // Show error toast
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update user'
+      setToast({ type: 'error', message: `Save failed: ${errorMessage}` })
+      
+      // Auto-hide toast after 5 seconds for errors
+      setTimeout(() => setToast(null), 5000)
     }
   }
 
@@ -147,26 +195,6 @@ const UserManagement: React.FC = () => {
     setShowTeamSuggestions(false)
   }
 
-  // Handle user role change
-  const handleRoleChange = async (user: User, newRole: 'admin' | 'participant' | 'super_admin') => {
-    // Only super admins can assign super admin role
-    if (newRole === 'super_admin' && !isSuperAdmin()) {
-      alert('Only super admins can assign super admin role')
-      return
-    }
-
-    // Prevent changing super admin role unless current user is super admin
-    if (user.role === 'super_admin' && !isSuperAdmin()) {
-      alert('Only super admins can modify super admin roles')
-      return
-    }
-
-    try {
-      await updateUser(user.id, { ...user, role: newRole })
-    } catch (error) {
-      console.error('Failed to update user role:', error)
-    }
-  }
 
   // Handle dojo selection
   const handleDojoSelection = (dojo: Dojo) => {
@@ -348,20 +376,15 @@ const UserManagement: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center justify-between">
-                        <select
-                          value={user.role}
-                          onChange={(e) => handleRoleChange(user, e.target.value as 'admin' | 'participant' | 'super_admin')}
-                          className="text-body-small border border-gray-300 rounded px-2 py-1"
-                          disabled={
-                            user.id === currentUser?.id || // Can't change own role
-                            (user.role === 'super_admin' && !isSuperAdmin()) // Only super admins can change super admin roles
-                          }
-                        >
-                          <option value="participant">Participant</option>
-                          <option value="admin">Admin</option>
-                          {isSuperAdmin() && <option value="super_admin">Super Admin</option>}
-                        </select>
+                      <div className="flex items-center">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                          user.role === 'super_admin' ? 'bg-purple-100 text-purple-800' :
+                          user.role === 'admin' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {user.role === 'super_admin' ? 'Super Admin' :
+                           user.role === 'admin' ? 'Admin' : 'Participant'}
+                        </span>
                         {user.role === 'super_admin' && !isSuperAdmin() && (
                           <span className="ml-2 text-xs text-red-600 font-medium">Protected</span>
                         )}
@@ -469,10 +492,41 @@ const UserManagement: React.FC = () => {
                 </select>
               </div>
 
+              {/* Role Selection */}
+              <div>
+                <label className="block text-body-small font-medium text-gray-700 mb-1">
+                  Role
+                </label>
+                <select
+                  value={editForm.role || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, role: e.target.value as 'admin' | 'participant' | 'super_admin' }))}
+                  className="input w-full"
+                  disabled={
+                    editingUser?.id === currentUser?.id || // Can't change own role
+                    (editingUser?.role === 'super_admin' && !isSuperAdmin()) // Only super admins can change super admin roles
+                  }
+                  required
+                >
+                  <option value="participant">Participant</option>
+                  <option value="admin">Admin</option>
+                  {isSuperAdmin() && <option value="super_admin">Super Admin</option>}
+                </select>
+                {editingUser?.role === 'super_admin' && !isSuperAdmin() && (
+                  <p className="text-body-small text-red-600 mt-1">
+                    Only super admins can modify super admin roles
+                  </p>
+                )}
+                {editingUser?.id === currentUser?.id && (
+                  <p className="text-body-small text-gray-500 mt-1">
+                    You cannot change your own role
+                  </p>
+                )}
+              </div>
+
               {/* Dojo Selection */}
               <div>
                 <label className="block text-body-small font-medium text-gray-700 mb-1">
-                  Dojo <span className="text-red-500">*</span>
+                  Dojo
                 </label>
                 <div className="relative">
                   <input
@@ -485,9 +539,8 @@ const UserManagement: React.FC = () => {
                     onClick={() => {
                       setShowDojoSuggestions(true)
                     }}
-                    placeholder="Search for dojos..."
+                    placeholder="Search for dojos... (leave empty to remove)"
                     className="input w-full"
-                    required
                   />
                   {showDojoSuggestions && dojoSuggestions.length > 0 && (
                     <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
@@ -506,14 +559,38 @@ const UserManagement: React.FC = () => {
                     </div>
                   )}
                 </div>
-                {selectedDojo && (
+                {selectedDojo ? (
                   <div className="mt-2 p-2 bg-green-50 rounded border border-green-200">
-                    <div className="text-sm font-medium text-green-800">Selected: {selectedDojo.name}</div>
-                    {selectedDojo.location && (
-                      <div className="text-xs text-green-600">{selectedDojo.location}</div>
-                    )}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-medium text-green-800">Selected: {selectedDojo.name}</div>
+                        {selectedDojo.location && (
+                          <div className="text-xs text-green-600">{selectedDojo.location}</div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedDojo(null)
+                          setDojoSearchQuery('')
+                          setSelectedTeam(null)
+                          setTeamSearchQuery('')
+                          setEditForm(prev => ({ ...prev, dojoId: undefined, teamId: undefined }))
+                        }}
+                        className="text-red-600 hover:text-red-800 text-xs"
+                        title="Remove from dojo"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
-                )}
+                ) : editingUser?.dojoId ? (
+                  <div className="mt-2 p-2 bg-yellow-50 rounded border border-yellow-200">
+                    <div className="text-sm text-yellow-800">
+                      No dojo selected - user will be removed from current dojo and team
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               {/* Team Selection */}
@@ -534,7 +611,7 @@ const UserManagement: React.FC = () => {
                         setShowTeamSuggestions(true)
                       }
                     }}
-                    placeholder={selectedDojo ? `Search teams in ${selectedDojo.name}...` : "Select a dojo first"}
+                    placeholder={selectedDojo ? `Search teams in ${selectedDojo.name}... (leave empty to remove)` : "Select a dojo first"}
                     className="input w-full"
                     disabled={!selectedDojo}
                   />
@@ -568,14 +645,36 @@ const UserManagement: React.FC = () => {
                     </div>
                   )}
                 </div>
-                {selectedTeam && (
+                {selectedTeam ? (
                   <div className="mt-2 p-2 bg-green-50 rounded border border-green-200">
-                    <div className="text-sm font-medium text-green-800">Selected: {selectedTeam.name}</div>
-                    <div className="text-xs text-green-600">
-                      {selectedTeam.players?.length || 0}/7 members
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-medium text-green-800">Selected: {selectedTeam.name}</div>
+                        <div className="text-xs text-green-600">
+                          {selectedTeam.players?.length || 0}/7 members
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedTeam(null)
+                          setTeamSearchQuery('')
+                          setEditForm(prev => ({ ...prev, teamId: undefined }))
+                        }}
+                        className="text-red-600 hover:text-red-800 text-xs"
+                        title="Remove from team"
+                      >
+                        Remove
+                      </button>
                     </div>
                   </div>
-                )}
+                ) : editingUser?.teamId && selectedDojo ? (
+                  <div className="mt-2 p-2 bg-yellow-50 rounded border border-yellow-200">
+                    <div className="text-sm text-yellow-800">
+                      No team selected - user will be removed from current team but remain in dojo
+                    </div>
+                  </div>
+                ) : null}
                 {!selectedDojo && (
                   <p className="text-body-small text-gray-500 mt-1">
                     Select a dojo first to choose a team
@@ -584,7 +683,7 @@ const UserManagement: React.FC = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex justify-between pt-4">
+              <div className="flex justify-between pt-6">
                 <button
                   type="button"
                   onClick={() => {
@@ -592,26 +691,27 @@ const UserManagement: React.FC = () => {
                     setEditingUser(null)
                     setEditForm({})
                   }}
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="text-red-600 hover:text-red-800 px-3 py-2 text-sm flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={editingUser ? !canDeleteUser(editingUser) : true}
+                  title={editingUser?.role === 'super_admin' && !isSuperAdmin() ? 'Protected user cannot be deleted' : 'Delete this user'}
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
-                  {editingUser?.role === 'super_admin' && !isSuperAdmin() ? 'Protected User' : 'Delete User'}
+                  {editingUser?.role === 'super_admin' && !isSuperAdmin() ? 'Protected' : 'Delete'}
                 </button>
                 <div className="flex space-x-3">
                   <button
                     type="button"
                     onClick={handleCancelEdit}
-                    className="btn-outlined"
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center"
                   >
                     <X className="w-4 h-4 mr-2" />
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="btn-primary"
+                    className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center font-medium shadow-sm"
                   >
-                    <Check className="w-4 h-4 mr-2" />
+                    <Check className="w-5 h-5 mr-2" />
                     Save Changes
                   </button>
                 </div>
@@ -658,6 +758,30 @@ const UserManagement: React.FC = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div 
+          className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center space-x-2 ${
+            toast.type === 'success' 
+              ? 'bg-green-600 text-white' 
+              : 'bg-red-600 text-white'
+          }`}
+        >
+          {toast.type === 'success' ? (
+            <CheckCircle className="w-5 h-5" />
+          ) : (
+            <AlertTriangle className="w-5 h-5" />
+          )}
+          <span className="text-body-medium font-medium">{toast.message}</span>
+          <button
+            onClick={() => setToast(null)}
+            className="text-white hover:text-gray-200 ml-2"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
     </div>
